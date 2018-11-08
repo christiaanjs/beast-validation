@@ -16,6 +16,7 @@ public class TreeSimulatorFromMaster extends TreeSimulator {
     @Override
     public TreeInterface getNextTree() {
         Tree tree = new Tree();
+        tree.initAndValidate();
         simulation.setInputValue(simulation.m_initial.getName(), tree);
         simulation.initAndValidate();
         return tree;
