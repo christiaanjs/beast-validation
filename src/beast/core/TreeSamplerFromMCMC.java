@@ -1,8 +1,7 @@
 package beast.core;
 
-import beast.TreeSampler;
-import beast.core.Input;
-import beast.core.MCMC;
+import beast.evolution.tree.TreeSampler;
+import beast.evolution.tree.Tree;
 import beast.evolution.tree.TreeInterface;
 
 public class TreeSamplerFromMCMC extends TreeSampler {
@@ -11,7 +10,7 @@ public class TreeSamplerFromMCMC extends TreeSampler {
     public Input<TreeInterface> treeInput;
 
     @Override
-    public TreeInterface getNextTree() {
+    public Tree getNextTreeImpl() {
         throw new RuntimeException("Not implemented");
     }
 
@@ -19,4 +18,5 @@ public class TreeSamplerFromMCMC extends TreeSampler {
     public void initAndValidate() {
         throw new RuntimeException("Not implemented");
     }
+
 }

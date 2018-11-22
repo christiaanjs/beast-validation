@@ -1,6 +1,6 @@
-package beast.simulation;
+package beast.evolution.tree;
 
-import beast.TreeSampler;
+import beast.evolution.tree.TreeSampler;
 import beast.core.Input;
 import beast.evolution.tree.Tree;
 import beast.evolution.tree.TreeInterface;

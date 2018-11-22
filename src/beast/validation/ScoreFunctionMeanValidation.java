@@ -1,6 +1,6 @@
 package beast.validation;
 
-import beast.TreeSampler;
+import beast.evolution.tree.TreeSampler;
 import beast.core.Input;
 import beast.core.Logger;
 import beast.core.parameter.RealParameter;
@@ -11,7 +11,6 @@ import javafx.util.Pair;
 import org.apache.commons.math.MathException;
 import org.apache.commons.math.distribution.ChiSquaredDistribution;
 import org.apache.commons.math.distribution.ChiSquaredDistributionImpl;
-import org.apache.commons.math3.exception.*;
 import org.apache.commons.math3.linear.*;
 import org.apache.commons.math3.stat.descriptive.MultivariateSummaryStatistics;
 
