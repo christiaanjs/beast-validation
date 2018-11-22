@@ -6,7 +6,7 @@ import beast.core.parameter.RealParameter;
 
 public abstract class StochasticValidationTest extends Runnable {
 
-    private static final double DEFAULT_ALPHA = 1e-3;
+    private static final double DEFAULT_ALPHA = 1.0 - 1e-3;
 
     public Input<Double> alphaInput = new Input<>("alpha", "1 - significance level of test", DEFAULT_ALPHA);
 

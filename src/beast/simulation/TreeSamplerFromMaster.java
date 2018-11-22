@@ -1,13 +1,12 @@
 package beast.simulation;
 
-import beast.TreeSimulator;
+import beast.TreeSampler;
 import beast.core.Input;
 import beast.evolution.tree.Tree;
 import beast.evolution.tree.TreeInterface;
 import master.BeastTreeFromMaster;
-import master.InheritanceTrajectory;
 
-public class TreeSimulatorFromMaster extends TreeSimulator {
+public class TreeSamplerFromMaster extends TreeSampler {
 
     public Input<BeastTreeFromMaster> simulationInput = new Input<>("simulation", "MASTER simulation", Input.Validate.REQUIRED);
 
