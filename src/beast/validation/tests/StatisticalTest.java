@@ -38,20 +38,19 @@ public abstract class StatisticalTest extends BEASTObject implements Loggable {
 
         values = new String[summarySize];
         for(int i = 0; i < summarySize; i++){
+            out.print(values[i]);
+            out.print("\t");
             values[i] = summary.get(keys[i]);
         }
-    }
-
-    public int getSummarySize(){
-        return summarySize;
     }
 
 
     @Override
     public void log(long sample, PrintStream out){
-        out.print(keys[(int) sample]);
-        out.print("\t");
-        out.print(values[(int) sample]);
+        for(int i = 0; i < summarySize; i++){
+            out.print(values[i]);
+            out.print("\t");
+        }
     }
 
     @Override
