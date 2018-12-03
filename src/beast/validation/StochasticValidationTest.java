@@ -28,6 +28,7 @@ public abstract class StochasticValidationTest extends Runnable {
     public Input<List<Logger>> resultLoggersInput = new Input<>("resultLogger", "Logger run after testing", new ArrayList<>());
 
     private double alpha;
+    private int nSamples;
 
     private List<TreeSampler> samplers;
     private List<Statistics> statistics;
@@ -36,9 +37,13 @@ public abstract class StochasticValidationTest extends Runnable {
     private List<Logger> sampleLoggers;
     private List<Logger> resultLoggers;
 
+    private List<double[][]> samples;
+
     public void initAndValidate(){
         alpha = alphaInput.get();
         if(alpha <= 0.0 || alpha >= 1.0) throw new IllegalArgumentException("alpha must be between 0 and 1");
+
+        nSamples = nSamplesInput.get();
 
         samplers = samplersInput.get();
         if(samplers.size() < 1) throw new IllegalArgumentException("There must be at least one tree sampler");
@@ -55,6 +60,13 @@ public abstract class StochasticValidationTest extends Runnable {
 
         sampleLoggers = sampleLoggersInput.get();
         resultLoggers = resultLoggersInput.get();
+
+        nSamples = nSamplesInput.get();
+
+        samples = new ArrayList<double[][]>(statistics.size());
+        for(int i = 0; i < statistics.size(); i++){
+            samples.add(i, new double[nSamples][statistics.get(0).getDimension()]);
+        }
 
     }
 

@@ -1,13 +1,9 @@
 package beast.validation.statistics;
 
 import beast.core.Input;
-import beast.core.StateNode;
 import beast.core.parameter.RealParameter;
 import beast.evolution.speciation.SpeciesTreeDistribution;
-import beast.evolution.tree.TreeInterface;
-import beast.evolution.tree.TreeSampler;
 import javafx.util.Pair;
-import org.w3c.dom.Node;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
@@ -101,6 +97,12 @@ public class NumericalScoreFunctionStatistics extends Statistics {
                 paramDim += dim;
             }
         }
+
+        super.initAndValidate();
     }
 
+    @Override
+    public int getDimension() {
+        return paramDim;
+    }
 }
