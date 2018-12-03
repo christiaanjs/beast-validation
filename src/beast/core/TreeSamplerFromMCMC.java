@@ -7,9 +7,14 @@ import beast.evolution.tree.TreeInterface;
 public class TreeSamplerFromMCMC extends MCMC implements TreeSampler {
 
     @Override
-    public void nextTree(int sampleNr) {
-        propagateState(sampleNr);
+    public void initAndValidate(){
+        super.initAndValidate();
+        for(int i = 0; i < burnIn; i++) propagateState(i); // TODO: Is sample number a problem?
     }
 
-    // TODO: Use every
+    @Override
+    public void nextTree(int sampleNr) {
+        for(int i = 0; i < storeEvery; i++)
+            propagateState(sampleNr);
+    }
 }
