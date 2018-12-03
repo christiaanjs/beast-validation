@@ -1,8 +1,6 @@
 package beast.core;
 
-import beast.evolution.tree.TreeSampler;
-import beast.evolution.tree.Tree;
-import beast.evolution.tree.TreeInterface;
+import beast.simulation.TreeSampler;
 
 public class TreeSamplerFromMCMC extends MCMC implements TreeSampler {
 

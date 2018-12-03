@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<beast version="2.0" namespace="beast:beast.core:beast.core.parameter:beast.evolution.tree:beast.evolution.speciation:beast.simulation:beast.validation:beast.validation.statistics:beast.validation.tests:master.model:master.conditions">
+    <run spec="StochasticValidationTest" alpha="0.5" nSamples="10000" printEvery="1000">
+        <sampler spec="TreeSamplerFromMaster" verbosity="0" reverseTime="false" simulationTime="3.0" id="masterTree">
+            <model spec="Model">
+                <population spec="Population" populationName="X" id="X"/>
+                <reaction spec="Reaction" reactionName="Speciation" rate="0.5">
+                    X -> 2X
+                </reaction>
+            </model>
+
+            <initialState spec="InitState">
+                <lineageSeed spec="Individual" population="@X"/>
+            </initialState>
+
+            <postSimCondition spec="LeafCountPostSimCondition" nLeaves="5" exact="true" />
+        </sampler>
+
+        <statistic spec="NumericalScoreFunctionStatistics" tree="@masterTree" id="grad">
+            <parameter spec="RealParameter" id="lambda" value="0.5"/>
+            <likelihood spec="YuleModel" birthDiffRate="@lambda" originHeight="3.0" tree="@masterTree" />
+        </statistic>
+
+        <test spec="MultivariateNormalZeroMeanTest" />
+
+        <sampleLogger spec="Logger" fileName="yule-grad.txt" log="@grad"/>
+    </run>
+</beast>

@@ -16,7 +16,7 @@ public class NumericalScoreFunctionStatistics extends Statistics {
     public Input<Double> stepSizeInput = new Input<>("stepSize", "Step size to use when calculating gradient", Math.sqrt(Math.ulp(1.0)), Input.Validate.OPTIONAL);
     public Input<Boolean> relativeStepInput = new Input<>("relativeStep", "Whether to use relative step when calculating gradient", true, Input.Validate.OPTIONAL);
     public Input<SpeciesTreeDistribution> likelihoodInput = new Input<>("likelihood", "Likelihood to be tested", Input.Validate.REQUIRED);
-    public Input<List<RealParameter>> parametersInput = new Input<>("parameters", "Parameters to be included in validation", new ArrayList<>(), Input.Validate.REQUIRED);
+    public Input<List<RealParameter>> parametersInput = new Input<>("parameter", "Parameters to be included in validation", new ArrayList<>(), Input.Validate.REQUIRED);
 
     private SpeciesTreeDistribution likelihood;
     private List<RealParameter> parameters;

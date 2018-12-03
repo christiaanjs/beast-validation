@@ -1,10 +1,9 @@
 package beast.validation;
 
 import beast.core.Input;
-import beast.core.Loggable;
 import beast.core.Logger;
 import beast.core.Runnable;
-import beast.evolution.tree.TreeSampler;
+import beast.simulation.TreeSampler;
 import beast.validation.statistics.Statistics;
 import beast.validation.tests.StatisticalTest;
 import beast.validation.tests.StatisticalTestType;
@@ -13,7 +12,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class StochasticValidationTest extends Runnable {
+public class StochasticValidationTest extends Runnable {
 
     private static final double DEFAULT_ALPHA = 1.0 - 1e-3;
     private static final int DEFAULT_N_SAMPLES = 1000;
@@ -23,8 +22,8 @@ public abstract class StochasticValidationTest extends Runnable {
     public Input<Integer> nSamplesInput = new Input<>("nSamples", "Number of samples to use", DEFAULT_N_SAMPLES, Input.Validate.OPTIONAL);
     public Input<Integer> printEveryInput = new Input<>("printEvery", "How regularly sampling progress is reported (-1 for never)", DEFAULT_PRINT_EVERY, Input.Validate.OPTIONAL);
 
-    public Input<List<TreeSampler>> samplersInput  = new Input<>("samplers", "Tree samplers to use in testing", new ArrayList<>());
-    public Input<List<Statistics>> statisticsInput = new Input<>("statistics", "Statistics from trees to perform test on", new ArrayList<>());
+    public Input<List<TreeSampler>> samplersInput  = new Input<>("sampler", "Tree samplers to use in testing", new ArrayList<>());
+    public Input<List<Statistics>> statisticsInput = new Input<>("statistic", "Statistics from trees to perform test on", new ArrayList<>());
     public Input<StatisticalTest> testInput = new Input<>("test", "Hypothesis test to perform on statistics", Input.Validate.REQUIRED);
     // Result
 
