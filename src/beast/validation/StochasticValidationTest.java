@@ -1,6 +1,7 @@
 package beast.validation;
 
 import beast.core.Input;
+import beast.core.Loggable;
 import beast.core.Logger;
 import beast.core.Runnable;
 import beast.evolution.tree.TreeSampler;
@@ -8,6 +9,7 @@ import beast.validation.statistics.Statistics;
 import beast.validation.tests.StatisticalTest;
 import beast.validation.tests.StatisticalTestType;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,9 +17,11 @@ public abstract class StochasticValidationTest extends Runnable {
 
     private static final double DEFAULT_ALPHA = 1.0 - 1e-3;
     private static final int DEFAULT_N_SAMPLES = 1000;
+    private static final int DEFAULT_PRINT_EVERY = 100;
 
     public Input<Double> alphaInput = new Input<>("alpha", "1 - significance level of test", DEFAULT_ALPHA);
     public Input<Integer> nSamplesInput = new Input<>("nSamples", "Number of samples to use", DEFAULT_N_SAMPLES, Input.Validate.OPTIONAL);
+    public Input<Integer> printEveryInput = new Input<>("printEvery", "How regularly sampling progress is reported (-1 for never)", DEFAULT_PRINT_EVERY, Input.Validate.OPTIONAL);
 
     public Input<List<TreeSampler>> samplersInput  = new Input<>("samplers", "Tree samplers to use in testing", new ArrayList<>());
     public Input<List<Statistics>> statisticsInput = new Input<>("statistics", "Statistics from trees to perform test on", new ArrayList<>());
@@ -29,6 +33,7 @@ public abstract class StochasticValidationTest extends Runnable {
 
     private double alpha;
     private int nSamples;
+    private int printEvery;
 
     private List<TreeSampler> samplers;
     private List<Statistics> statistics;
@@ -44,6 +49,7 @@ public abstract class StochasticValidationTest extends Runnable {
         if(alpha <= 0.0 || alpha >= 1.0) throw new IllegalArgumentException("alpha must be between 0 and 1");
 
         nSamples = nSamplesInput.get();
+        printEvery = printEveryInput.get();
 
         samplers = samplersInput.get();
         if(samplers.size() < 1) throw new IllegalArgumentException("There must be at least one tree sampler");
@@ -71,8 +77,51 @@ public abstract class StochasticValidationTest extends Runnable {
     }
 
     @Override
-    public void run(){
-        throw new RuntimeException("Not implemented");
+    public void run() throws IOException {
+        System.out.println("Stochastic validation test");
+
+        for(Logger logger: sampleLoggers) logger.init();
+
+        System.out.println("Sampling...");
+
+        for(int i = 0; i < nSamples; i++){
+            if(printEvery != -1 && i % printEvery == 0){
+                System.out.println("Sample " + i);
+            }
+
+            for(TreeSampler sampler: samplers) sampler.nextTree(i);
+
+            for(int statisticIndex = 0; statisticIndex < statistics.size(); statisticIndex++){
+                Statistics statistic = statistics.get(statisticIndex);
+                statistic.updateStatistics(i);
+                double[][] sampleArray = samples.get(statisticIndex);
+                System.arraycopy(statistic.getArrayValues(), 0, sampleArray[i], 0, statistic.getDimension());
+            }
+
+            for(Logger logger: sampleLoggers) logger.log(i);
+        }
+
+        for(Logger logger: sampleLoggers) logger.close();
+
+        System.out.println("Performing test...");
+
+        test.performTest(samples);
+
+        if(test.getPValue() < 1 - alpha){
+            System.out.println("Test FAILED");
+        } else {
+            System.out.println("Test PASSED");
+        }
+        System.out.println(String.format("p value: %f", test.getPValue()));
+
+        for(Logger logger: resultLoggers){
+            logger.init();
+            logger.log(0);
+            logger.close();
+        }
+
+
+
     }
 
 }

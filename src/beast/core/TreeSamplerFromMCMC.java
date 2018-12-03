@@ -10,4 +10,6 @@ public class TreeSamplerFromMCMC extends MCMC implements TreeSampler {
     public void nextTree(int sampleNr) {
         propagateState(sampleNr);
     }
+
+    // TODO: Use every
 }

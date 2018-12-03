@@ -76,6 +76,10 @@ public abstract class Statistics extends StateNode implements Loggable {
         System.arraycopy(storedValues, 0, values, 0, getDimension());
     }
 
+    public double[] getArrayValues(){
+        return values;
+    }
+
     @Override
     public double getArrayValue() {
         return values[0];

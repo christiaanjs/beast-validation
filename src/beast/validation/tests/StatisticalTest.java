@@ -11,7 +11,12 @@ import java.util.stream.Stream;
 
 public abstract class StatisticalTest extends BEASTObject implements Loggable {
 
-    public abstract double performTest(List<double[][]> values);
+    protected double pValue;
+    public abstract void performTest(List<double[][]> values);
+
+    public double getPValue(){
+        return pValue;
+    }
 
     private int summarySize;
     private String[] keys;
@@ -42,6 +47,8 @@ public abstract class StatisticalTest extends BEASTObject implements Loggable {
             out.print("\t");
             values[i] = summary.get(keys[i]);
         }
+
+        out.print("pValue");
     }
 
 
@@ -51,6 +58,7 @@ public abstract class StatisticalTest extends BEASTObject implements Loggable {
             out.print(values[i]);
             out.print("\t");
         }
+        out.print(pValue);
     }
 
     @Override

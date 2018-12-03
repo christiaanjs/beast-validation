@@ -49,7 +49,7 @@ public class MultivariateNormalZeroMeanTest extends StatisticalTest {
     }
 
     @Override
-    public double performTest(List<double[][]> valuesList) {
+    public void performTest(List<double[][]> valuesList) {
         if(valuesList.size() != 1) throw new IllegalArgumentException("Only one sample must be provided");
 
         double[][] values = valuesList.get(0);
@@ -73,7 +73,7 @@ public class MultivariateNormalZeroMeanTest extends StatisticalTest {
         ChiSquaredDistribution chiSq = new ChiSquaredDistributionImpl(d);
 
         try {
-            return 1.0 - chiSq.cumulativeProbability(testStatistic);
+            pValue = 1.0 - chiSq.cumulativeProbability(testStatistic);
         } catch (MathException e) {
             System.out.println("Chi-squared p-value calculation failed");
             throw new RuntimeException(e);
