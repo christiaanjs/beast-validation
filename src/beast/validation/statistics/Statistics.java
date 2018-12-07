@@ -3,21 +3,19 @@ package beast.validation.statistics;
 import beast.core.Input;
 import beast.core.Loggable;
 import beast.core.StateNode;
-import beast.core.parameter.RealParameter;
-import beast.evolution.tree.Tree;
 import org.w3c.dom.Node;
 
 import java.io.PrintStream;
 
 public abstract class Statistics extends StateNode implements Loggable {
-    public Input<Tree> treeInput = new Input<>("tree", "The tree to compute statistics on", Input.Validate.REQUIRED);
+    public Input<StateNode> stateInput = new Input<>("state", "The state to compute statistics on", Input.Validate.REQUIRED);
 
-    protected Tree tree;
+    protected StateNode stateNode;
     protected double[] values;
     private double[] storedValues;
 
     public void initAndValidate(){
-        tree = treeInput.get();
+        stateNode = stateInput.get();
         values = new double[getDimension()];
         storedValues = new double[getDimension()];
     }
@@ -37,7 +35,7 @@ public abstract class Statistics extends StateNode implements Loggable {
     @Override
     public void assignTo(StateNode other) {
         Statistics otherS = (Statistics) other;
-        otherS.tree = tree;
+        otherS.stateNode = stateNode;
         otherS.values = values;
 
     }
@@ -45,7 +43,7 @@ public abstract class Statistics extends StateNode implements Loggable {
     @Override
     public void assignFrom(StateNode other) {
         Statistics otherS = (Statistics) other;
-        tree = otherS.tree;
+        stateNode = otherS.stateNode;
         values = otherS.values;
 
     }

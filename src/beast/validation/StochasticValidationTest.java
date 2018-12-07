@@ -51,7 +51,7 @@ public class StochasticValidationTest extends Runnable {
         printEvery = printEveryInput.get();
 
         samplers = samplersInput.get();
-        if(samplers.size() < 1) throw new IllegalArgumentException("There must be at least one tree sampler");
+        if(samplers.size() < 1) throw new IllegalArgumentException("There must be at least one sampler");
 
         statistics = statisticsInput.get();
         if(statistics.size() < 1) throw new IllegalArgumentException("There must be at least one statistic");
