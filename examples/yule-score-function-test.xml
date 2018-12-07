@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <beast version="2.0" namespace="beast:beast.core:beast.core.parameter:beast.evolution.tree:beast.evolution.speciation:beast.simulation:beast.validation:beast.validation.statistics:beast.validation.tests:master.model:master.conditions">
-    <run spec="StochasticValidationTest" alpha="0.5" nSamples="10000" printEvery="1000">
+    <run spec="StochasticValidationTest" alpha="0.1" nSamples="10000" printEvery="1000">
         <sampler spec="TreeSamplerFromMaster" verbosity="0" reverseTime="false" simulationTime="3.0" id="masterTree">
             <model spec="Model">
                 <population spec="Population" populationName="X" id="X"/>
@@ -21,8 +21,9 @@
             <likelihood spec="YuleModel" birthDiffRate="@lambda" originHeight="3.0" tree="@masterTree" />
         </statistic>
 
-        <test spec="MultivariateNormalZeroMeanTest" />
+        <test spec="MultivariateNormalZeroMeanTest" id="test"/>
 
         <sampleLogger spec="Logger" fileName="yule-grad.txt" log="@grad"/>
+        <resultLogger spec="Logger" fileName="yule-result.txt" log="@test"/>
     </run>
 </beast>
