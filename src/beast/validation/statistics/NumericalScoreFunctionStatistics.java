@@ -1,5 +1,6 @@
 package beast.validation.statistics;
 
+import beast.core.Distribution;
 import beast.core.Input;
 import beast.core.parameter.RealParameter;
 import beast.evolution.speciation.SpeciesTreeDistribution;
@@ -15,10 +16,10 @@ public class NumericalScoreFunctionStatistics extends Statistics {
 
     public Input<Double> stepSizeInput = new Input<>("stepSize", "Step size to use when calculating gradient", Math.sqrt(Math.ulp(1.0)), Input.Validate.OPTIONAL);
     public Input<Boolean> relativeStepInput = new Input<>("relativeStep", "Whether to use relative step when calculating gradient", true, Input.Validate.OPTIONAL);
-    public Input<SpeciesTreeDistribution> likelihoodInput = new Input<>("likelihood", "Likelihood to be tested", Input.Validate.REQUIRED);
+    public Input<Distribution> likelihoodInput = new Input<>("likelihood", "Likelihood to be tested", Input.Validate.REQUIRED);
     public Input<List<RealParameter>> parametersInput = new Input<>("parameter", "Parameters to be included in validation", new ArrayList<>(), Input.Validate.REQUIRED);
 
-    private SpeciesTreeDistribution likelihood;
+    private Distribution likelihood;
     private List<RealParameter> parameters;
 
     private double stepSize;
@@ -38,9 +39,9 @@ public class NumericalScoreFunctionStatistics extends Statistics {
                 double step = relativeStep ? stepSize * paramValues.get(i) : stepSize;
 
                 p.setValue(j, paramValues.get(i) - step);
-                double fxmh = likelihood.calculateTreeLogLikelihood(tree);
+                double fxmh = likelihood.calculateLogP();
                 p.setValue(j, paramValues.get(i) + step);
-                double fxph = likelihood.calculateTreeLogLikelihood(tree);
+                double fxph = likelihood.calculateLogP();
                 values[i] = (fxph - fxmh)/(2*step);
 
                 p.setValue(j, paramValues.get(i));

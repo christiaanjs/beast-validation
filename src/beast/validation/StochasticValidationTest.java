@@ -3,7 +3,7 @@ package beast.validation;
 import beast.core.Input;
 import beast.core.Logger;
 import beast.core.Runnable;
-import beast.simulation.TreeSampler;
+import beast.simulation.Sampler;
 import beast.validation.statistics.Statistics;
 import beast.validation.tests.StatisticalTest;
 import beast.validation.tests.StatisticalTestType;
@@ -22,7 +22,7 @@ public class StochasticValidationTest extends Runnable {
     public Input<Integer> nSamplesInput = new Input<>("nSamples", "Number of samples to use", DEFAULT_N_SAMPLES, Input.Validate.OPTIONAL);
     public Input<Integer> printEveryInput = new Input<>("printEvery", "How regularly sampling progress is reported (-1 for never)", DEFAULT_PRINT_EVERY, Input.Validate.OPTIONAL);
 
-    public Input<List<TreeSampler>> samplersInput  = new Input<>("sampler", "Tree samplers to use in testing", new ArrayList<>());
+    public Input<List<Sampler>> samplersInput  = new Input<>("sampler", "Tree samplers to use in testing", new ArrayList<>());
     public Input<List<Statistics>> statisticsInput = new Input<>("statistic", "Statistics from trees to perform test on", new ArrayList<>());
     public Input<StatisticalTest> testInput = new Input<>("test", "Hypothesis test to perform on statistics", Input.Validate.REQUIRED);
     // Result
@@ -34,7 +34,7 @@ public class StochasticValidationTest extends Runnable {
     private int nSamples;
     private int printEvery;
 
-    private List<TreeSampler> samplers;
+    private List<Sampler> samplers;
     private List<Statistics> statistics;
     private StatisticalTest test;
 
@@ -68,7 +68,7 @@ public class StochasticValidationTest extends Runnable {
 
         nSamples = nSamplesInput.get();
 
-        samples = new ArrayList<double[][]>(statistics.size());
+        samples = new ArrayList<>(statistics.size());
         for(int i = 0; i < statistics.size(); i++){
             samples.add(i, new double[nSamples][statistics.get(0).getDimension()]);
         }
@@ -88,7 +88,7 @@ public class StochasticValidationTest extends Runnable {
                 System.out.println("Sample " + i);
             }
 
-            for(TreeSampler sampler: samplers) sampler.nextTree(i);
+            for(Sampler sampler: samplers) sampler.nextState(i);
 
             for(int statisticIndex = 0; statisticIndex < statistics.size(); statisticIndex++){
                 Statistics statistic = statistics.get(statisticIndex);
@@ -106,7 +106,7 @@ public class StochasticValidationTest extends Runnable {
 
         test.performTest(samples);
 
-        if(test.getPValue() < 1 - alpha){
+        if(test.getPValue() < alpha){
             System.out.println("Test FAILED");
         } else {
             System.out.println("Test PASSED");

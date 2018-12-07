@@ -66,7 +66,7 @@ public class MultivariateNormalZeroMeanTest extends StatisticalTest {
 
         for(int i = 0; i < n; i++){
             h0LogLikelihood += h0.logDensity(values[i]);
-            h1LogLikelihood = h1.logDensity(values[i]);
+            h1LogLikelihood += h1.logDensity(values[i]);
         }
 
         testStatistic = 2 * (h1LogLikelihood - h0LogLikelihood);

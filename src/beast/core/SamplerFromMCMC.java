@@ -1,8 +1,8 @@
 package beast.core;
 
-import beast.simulation.TreeSampler;
+import beast.simulation.Sampler;
 
-public class TreeSamplerFromMCMC extends MCMC implements TreeSampler {
+public class SamplerFromMCMC extends MCMC implements Sampler {
 
     @Override
     public void initAndValidate(){
@@ -11,7 +11,7 @@ public class TreeSamplerFromMCMC extends MCMC implements TreeSampler {
     }
 
     @Override
-    public void nextTree(int sampleNr) {
+    public void nextState(int sampleNr) {
         for(int i = 0; i < storeEvery; i++)
             propagateState(sampleNr);
     }

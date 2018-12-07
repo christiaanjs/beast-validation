@@ -33,7 +33,6 @@ public abstract class StatisticalTest extends BEASTObject implements Loggable {
 
     @Override
     public void init(PrintStream out){
-        out.print("key\tvalue\t");
         Map<String, String> summary = getSummary();
         summarySize = summary.size();
 
@@ -43,7 +42,7 @@ public abstract class StatisticalTest extends BEASTObject implements Loggable {
 
         values = new String[summarySize];
         for(int i = 0; i < summarySize; i++){
-            out.print(values[i]);
+            out.print(keys[i]);
             out.print("\t");
             values[i] = summary.get(keys[i]);
         }

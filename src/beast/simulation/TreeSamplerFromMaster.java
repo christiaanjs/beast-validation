@@ -2,10 +2,10 @@ package beast.simulation;
 
 import master.BeastTreeFromMaster;
 
-public class TreeSamplerFromMaster extends BeastTreeFromMaster implements TreeSampler {
+public class TreeSamplerFromMaster extends BeastTreeFromMaster implements Sampler {
 
     @Override
-    public void nextTree(int sampleNr) {
+    public void nextState(int sampleNr) {
         initAndValidate();
     }
 }
