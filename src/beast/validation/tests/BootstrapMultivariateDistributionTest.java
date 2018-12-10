@@ -1,19 +1,24 @@
 package beast.validation.tests;
 
 import beast.core.Input;
+import beast.util.Randomizer;
 
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class BootstrapMultivariateDistributionTest extends StatisticalTest {
 
     public Input<Integer> nBootsInput = new Input<>("nBoots", "Number of boostrap resamples", 1000, Input.Validate.OPTIONAL);
-    public Input<String> criterionInput = new Input<>("criterion", "Test criterion to use: ks (Kolmogorov-Smirnov) or cvm (Cramer-von Mises)", "ks", Input.Validate.REQUIRED);
+    public Input<String> criterionInput = new Input<>("criterion", "Test criterion to use: ks (Kolmogorov-Smirnov) or cvm (Cramer-von Mises)", "ks", new String[]{ "ks", "cvm" });
 
     private String criterion;
+    private int nBoots;
 
     private boolean[][] pairwiseLess;
     private double statisticValue;
+    private double[] bootStatistics;
     private int n1;
     private int n2;
     private int N;
@@ -59,6 +64,23 @@ public class BootstrapMultivariateDistributionTest extends StatisticalTest {
         return statisticValue;
     }
 
+    private void assignTrueSampleIndices() {
+        for(int i = 0; i < N; i++){
+            int[] sampleIndices = i < n1 ? sample1Indices : sample2Indices;
+            int indexI = i < n1 ? i : i - n1;
+            sampleIndices[indexI] = i;
+        }
+    }
+
+    private void randomiseSampleIndices(){
+        for(int i = 0; i < n1; i++){
+            sample1Indices[i] = Randomizer.nextInt(N);
+        }
+        for(int i = 0; i < n2; i++){
+            sample2Indices[i] = Randomizer.nextInt(N);
+        }
+    }
+
     @Override
     public void performTest(List<double[][]> values) {
         double[][] sample1 = values.get(0);
@@ -83,13 +105,19 @@ public class BootstrapMultivariateDistributionTest extends StatisticalTest {
         sample1Indices = new int[n1];
         sample2Indices = new int[n2];
 
-        for(int i = 0; i < N; i++){
-            int[] sampleIndices = i < n1 ? sample1Indices : sample2Indices;
-            int indexI = i < n1 ? i : i - n1;
-            sampleIndices[indexI] = i;
-        }
+        assignTrueSampleIndices();
 
         statisticValue = calcStatistic();
+
+        bootStatistics = new double[nBoots];
+        pValue = 0.0;
+        for(int i = 0; i < nBoots; i++) {
+            randomiseSampleIndices();
+            bootStatistics[i] = calcStatistic();
+            if(bootStatistics[i] > statisticValue){
+                pValue += 1.0 / nBoots;
+            }
+        }
 
     }
 
@@ -104,14 +132,16 @@ public class BootstrapMultivariateDistributionTest extends StatisticalTest {
 
     @Override
     public Map<String, String> getSummary() {
-        throw new RuntimeException("Not implemented");
+        Map<String, String> summary = new HashMap<>();
+        summary.put("statistic", Double.toString(statisticValue));
+        summary.put("bootStatistics", Arrays.toString(bootStatistics));
+        return summary;
     }
 
     public void initAndValidate(){
         super.initAndValidate();
         criterion = criterionInput.get().toLowerCase();
-        if(!(criterion.equals("ks") || criterion.equals("cvm"))){
-            throw new IllegalArgumentException("Invalid criterion: must be ks or cvm");
-        }
+        nBoots = nBootsInput.get();
+        if(nBoots <= 1) throw new IllegalArgumentException("nBoots must be greater than 1");
     }
 }
