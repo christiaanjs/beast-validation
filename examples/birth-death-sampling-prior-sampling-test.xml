@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<beast version="2.0" namespace="beast:beast.core:beast.core.parameter:beast.evolution.tree:beast.evolution.speciation:beast.simulation:beast.validation:beast.validation.statistics:beast.validation.tests:master:master.model:master.conditions:master.postprocessors">
+    <run spec="StochasticValidationTest" alpha="0.1" nSamples="1000" printEvery="100">
+        <sampler spec="TreeSamplerFromMaster" verbosity="0" reverseTime="false" simulationTime="3.0" id="masterTree">
+            <model spec="Model">
+                <population spec="Population" populationName="X" id="X"/>
+                <population spec="Population" populationName="D" id="D"/>
+                <reaction spec="Reaction" reactionName="Speciation" rate="0.5">
+                    X -> 2X
+                </reaction>
+                <reaction spec="Reaction" reactionName="Extinction" rate="0.2">
+                    X -> D
+                </reaction>
+            </model>
+
+            <initialState spec="InitState">
+                <lineageSeed spec="Individual" population="@X"/>
+            </initialState>
+            <inheritancePostProcessor spec="LineageFilter" populationName="X"/>
+            <inheritancePostProcessor spec="LineageSampler" pSample="0.6" samplingTime="3.0"/>
+            <postSimCondition spec="LeafCountPostSimCondition" nLeaves="4" exact="true" />
+        </sampler>
+
+        <sampler spec="SamplerFromMCMC" chainLength="1" preBurnin="10" storeEvery="5"><!-- Since we are using a global operator we effectively have independent samples -->
+            <state>
+                <stateNode spec="BeastTreeFromMaster" verbosity="0" reverseTime="false" simulationTime="3.0"  id="mcmcTree">
+                    <model spec="Model">
+                        <population spec="Population" populationName="X" id="Xinit"/>
+                        <population spec="Population" populationName="D" id="Dinit"/>
+                        <reaction spec="Reaction" reactionName="Speciation" rate="0.5">
+                            X -> 2X
+                        </reaction>
+                        <reaction spec="Reaction" reactionName="Extinction" rate="0.2">
+                            X -> D
+                        </reaction>
+                    </model>
+
+                    <initialState spec="InitState">
+                        <lineageSeed spec="Individual" population="@Xinit"/>
+                    </initialState>
+                    <inheritancePostProcessor spec="LineageFilter" populationName="X"/>
+                    <inheritancePostProcessor spec="LineageSampler" pSample="0.6" samplingTime="3.0"/>
+                    <postSimCondition spec="LeafCountPostSimCondition" nLeaves="4" exact="true" />
+                </stateNode>
+            </state>
+            <distribution spec="BirthDeathGernhard08Model" birthDiffRate="0.3" relativeDeathRate="0.4" sampleProbability="0.6" originHeight="3.0" tree="@mcmcTree" />
+            <operator spec="OperatorFromSampler" weight="1.0" operand="@mcmcTree">
+                <sampler spec="TreeSamplerFromMaster" verbosity="0" reverseTime="false" simulationTime="3.0">
+                    <model spec="Model">
+                        <population spec="Population" populationName="X" id="Xoperator"/>
+                        <population spec="Population" populationName="D" id="Doperator"/>
+                        <reaction spec="Reaction" reactionName="Speciation" rate="0.5">
+                            X -> 2X
+                        </reaction>
+                        <reaction spec="Reaction" reactionName="Extinction" rate="0.2">
+                            X -> D
+                        </reaction>
+                    </model>
+
+                    <initialState spec="InitState">
+                        <lineageSeed spec="Individual" population="@Xoperator"/>
+                    </initialState>
+                    <inheritancePostProcessor spec="LineageFilter" populationName="X"/>
+                    <inheritancePostProcessor spec="LineageSampler" pSample="0.6" samplingTime="3.0"/>
+                    <postSimCondition spec="LeafCountPostSimCondition" nLeaves="4" exact="true" />
+                </sampler>
+            </operator>
+            <logger spec="Logger" fileName="birth-death-sampling-mcmc-tree.trees" log="@mcmcTree"/>
+        </sampler>
+
+        <statistic spec="UltrametricTreeStatistics" state="@masterTree" id="simulatorStats" includeLeafCount="false"/>
+        <statistic spec="UltrametricTreeStatistics" state="@mcmcTree" id="mcmcStats" includeLeafCount="false"/>
+
+        <sampleLogger spec="Logger" fileName="birth-death-sampling-master-tree.trees" log="@masterTree"/>
+
+        <sampleLogger spec="Logger" fileName="birth-death-sampling-master-tree-stats.txt" log="@simulatorStats"/>
+        <sampleLogger spec="Logger" fileName="birth-death-sampling-mcmc-tree-stats.txt" log="@mcmcStats"/>
+
+        <test spec="BootstrapMultivariateDistributionTest" id="test" printEvery="100" nBoots="500"/>
+
+        <resultLogger spec="Logger" fileName="yule-result.txt" log="@test"/>
+    </run>
+</beast>
