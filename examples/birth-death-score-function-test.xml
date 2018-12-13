@@ -20,7 +20,7 @@
             <postSimCondition spec="LeafCountPostSimCondition" nLeaves="5" exact="true" />
         </sampler>
 
-        <statistic spec="NumericalScoreFunctionStatistics" tree="@masterTree" id="grad">
+        <statistic spec="NumericalScoreFunctionStatistics" state="@masterTree" id="grad">
             <parameter spec="RealParameter" id="birthDiffRate" value="0.3"/>
             <parameter spec="RealParameter" id="relativeDeathRate" value="0.4"/>
             <likelihood spec="BirthDeathGernhard08Model" birthDiffRate="@birthDiffRate" relativeDeathRate="@relativeDeathRate" sampleProbability="1.0" originHeight="3.0" tree="@masterTree" />

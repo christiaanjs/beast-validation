@@ -1,8 +1,12 @@
 package beast.simulation;
 
+import beast.core.BEASTInterface;
 import beast.core.Input;
 import beast.core.Operator;
 import beast.core.StateNode;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class OperatorFromSampler extends Operator {
 
@@ -25,5 +29,11 @@ public class OperatorFromSampler extends Operator {
         sampler = samplerInput.get();
         samplerState = sampler.getStateNode();
         operand = operandInput.get();
+    }
+
+    public List<StateNode> listStateNodes() {
+        List<StateNode> stateNodes = super.listStateNodes();
+        stateNodes.remove(sampler);
+        return stateNodes;
     }
 }

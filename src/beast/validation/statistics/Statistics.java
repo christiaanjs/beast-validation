@@ -1,13 +1,12 @@
 package beast.validation.statistics;
 
 import beast.core.Input;
-import beast.core.Loggable;
 import beast.core.StateNode;
 import org.w3c.dom.Node;
 
 import java.io.PrintStream;
 
-public abstract class Statistics extends StateNode implements Loggable {
+public abstract class Statistics extends StateNode {
     public Input<StateNode> stateInput = new Input<>("state", "The state to compute statistics on", Input.Validate.REQUIRED);
 
     protected StateNode stateNode;
