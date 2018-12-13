@@ -13,7 +13,7 @@ public class UltrametricTreeStatistics extends TreeStatistics {
 
     private double getTreeLength(){
         return Arrays.stream(tree.getNodesAsArray())
-                .filter(Node::isRoot)
+                .filter(n -> !n.isRoot())
                 .mapToDouble(n -> n.getParent().getHeight() - n.getHeight())
                 .sum();
     }
@@ -33,8 +33,8 @@ public class UltrametricTreeStatistics extends TreeStatistics {
 
     @Override
     public void init(PrintStream out) {
-        out.print("treeLength\t rootHeight");
+        out.print("treeLength\trootHeight");
         if(includeLeafCountInput.get())
-            out.print("\trootHeight");
+            out.print("\tnLeaves");
     }
 }

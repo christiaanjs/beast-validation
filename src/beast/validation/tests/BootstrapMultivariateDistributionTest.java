@@ -11,10 +11,12 @@ import java.util.Map;
 public class BootstrapMultivariateDistributionTest extends StatisticalTest {
 
     public Input<Integer> nBootsInput = new Input<>("nBoots", "Number of boostrap resamples", 1000, Input.Validate.OPTIONAL);
+    public Input<Integer> printEveryInput = new Input<>("printEvery", "Print bootstrapping progress every", 100, Input.Validate.OPTIONAL);
     public Input<String> criterionInput = new Input<>("criterion", "Test criterion to use: ks (Kolmogorov-Smirnov) or cvm (Cramer-von Mises)", "ks", new String[]{ "ks", "cvm" });
 
     private String criterion;
     private int nBoots;
+    private int printEvery;
 
     private boolean[][] pairwiseLess;
     private double statisticValue;
@@ -112,6 +114,7 @@ public class BootstrapMultivariateDistributionTest extends StatisticalTest {
         bootStatistics = new double[nBoots];
         pValue = 0.0;
         for(int i = 0; i < nBoots; i++) {
+            if(i % printEvery == 0) System.out.println("Bootstrap sample " + (i + 1));
             randomiseSampleIndices();
             bootStatistics[i] = calcStatistic();
             if(bootStatistics[i] > statisticValue){
@@ -143,5 +146,7 @@ public class BootstrapMultivariateDistributionTest extends StatisticalTest {
         criterion = criterionInput.get().toLowerCase();
         nBoots = nBootsInput.get();
         if(nBoots <= 1) throw new IllegalArgumentException("nBoots must be greater than 1");
+        printEvery = printEveryInput.get();
+        if(printEvery < 1) throw new IllegalArgumentException("printEvery must be 1 or greater");
     }
 }

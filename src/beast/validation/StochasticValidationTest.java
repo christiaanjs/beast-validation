@@ -85,7 +85,7 @@ public class StochasticValidationTest extends Runnable {
 
         for(int i = 0; i < nSamples; i++){
             if(printEvery != -1 && i % printEvery == 0){
-                System.out.println("Sample " + i);
+                System.out.println("Sample " + (i + 1));
             }
 
             for(Sampler sampler: samplers) sampler.nextState(i);
