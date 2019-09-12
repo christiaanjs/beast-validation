@@ -1,0 +1,214 @@
+<!-- Build Experimenter. It is also used by Hudson Experimenter project. JUnit test is available for this build. -->
+<project basedir="." default="addon" name="BUILD_Experimenter">
+	<description>
+	    Build Experimenter. 
+            Also used by Hudson Experimenter project. 
+	    JUnit test is available for this build.
+	    $Id: build_Experimenter.xml $
+	</description>
+
+	<!-- set global properties for this build -->
+	<property name="srcExperimenter" location="src" />
+	<property name="buildExperimenter" location="build" />
+	<property name="libExperimenter" location="lib" />
+	<property name="release_dir" value="release" />
+	<property name="distExperimenter" location="${buildExperimenter}/dist" />
+	<property name="MASTERclasspath" location="../BEASTLabs/build" />
+	<property name="BEASTLabsclasspath" location="../MASTER/build" />
+	<property name="beast2path" location="../beast2" />
+	<property name="libBeast2" location="${beast2path}/lib" />
+	<property name="srcBeast2" location="${beast2path}/src" />
+	<property name="beast2classpath" location="${beast2path}/build" />
+	<property name="Add_on_dir" value="${release_dir}/add-on" />
+	<property name="version" value="0.0.1" />
+
+    <import file="${beast2path}/build.xml" />
+
+	<property name="main_class_BEAST" value="beast.app.BeastMCMC" />
+	<property name="report" value="${buildExperimenter}/junitreport"/>
+
+	<path id="classpath">
+        <pathelement path="${buildExperimenter}"/>
+	<fileset dir="${libBeast2}" includes="commons-math3-3.1.1.jar"/>	
+	<fileset dir="${libBeast2}" includes="antlr-runtime-4.7.jar"/>	
+	<fileset dir="${libBeast2}" includes="junit-4.8.2.jar"/>
+	<fileset dir="${libBeast2}" includes="fest.jar"/>
+        <fileset dir="${libBeast2}" includes="beagle.jar"/>
+        <fileset dir="${libBeast2}" includes="jam.jar"/>
+        <fileset dir="${libBeast2}" includes="colt.jar"/>
+        <pathelement path="${beast2classpath}"/>
+        <pathelement path="${BEASTLabsclasspath}"/>
+        <pathelement path="${MASTERclasspath}"/>
+	</path>
+
+	<!-- start -->
+	<target name="initExperimenter">
+		<echo message="${ant.project.name}: ${ant.file}" />
+	</target>
+
+	<target name="cleanExperimenter">
+    	<delete dir="${buildExperimenter}" />
+	</target>
+
+	<!-- clean previous build, and then compile Java source code, and Juint test -->
+	<target name="build_all_Experimenter" depends="cleanExperimenter,compile-allExperimenter,junitExperimenter"
+        description="Clean and Build all run-time stuff">
+	</target>
+
+	<!-- clean previous build, compile Java source code, and Junit test, and make the beast.jar and beauti.jar -->
+	<target name="build_jar_all_Experimenter" depends="cleanExperimenter,compile-allExperimenter,junitExperimenter,dist_all_Experimenter"
+        description="Clean and Build all run-time stuff">
+	</target>
+
+
+	<!-- No JUnit Test, clean previous build, compile Java source code, and make the Experimenter.jar and beauti.jar -->
+	<target name="build_jar_all_Experimenter_NoJUnitTest" depends="cleanExperimenter,compile-allExperimenter,dist_all_Experimenter"
+        description="Clean and Build all run-time stuff">
+	</target>
+
+	<!-- compile Java source code -->
+	<target name="compile-allExperimenter" depends="initExperimenter,compile-all">
+
+
+	    <!-- Capture the path as a delimited property using the refid attribute -->
+	    <property name="myclasspath" refid="classpath"/>
+	    <!-- Emit the property to the ant console -->
+	    <echo message="Classpath = ${myclasspath}"/>
+
+		<mkdir dir="${buildExperimenter}" />
+
+		<!-- Compile the java code from ${srcExperimenter} into ${buildExperimenter} /bin -->
+		<javac srcdir="${srcExperimenter}" destdir="${buildExperimenter}" classpathref="classpath" 
+		       fork="true"
+		       memoryinitialsize="256m"
+		       memorymaximumsize="256m">
+			<include name="beast/**/**" />
+			<!-- compile JUnit test classes -->
+			<include name="test/beast/**" />
+		</javac>
+		<echo message="Successfully compiled." />
+	</target>
+
+	<!-- make the beast.jar and beauti.jar -->
+	<target name="dist_all_Experimenter" depends="compile-allExperimenter" description="create Experimenter jar">
+		<!-- Create the distribution directory -->
+		<mkdir dir="${distExperimenter}" />
+
+		<!-- Put everything in ${buildExperimenter} into the beast.jar file -->
+		<jar jarfile="${distExperimenter}/Experimenter.jar">
+			<manifest>
+				<attribute name="Built-By" value="${user.name}" />
+				<attribute name="Main-Class" value="${main_class_BEAST}" />
+			</manifest>
+			<fileset dir="${buildExperimenter}">
+				<include name="**/*.class" />
+			</fileset>
+			<fileset dir="${BEASTLabsclasspath}">
+				<include name="**/*.class"/>
+			</fileset>
+			<fileset dir="${beast2classpath}">
+				<include name="**/*.class" />
+				<include name="**/*.properties" />
+				<include name="**/*.png" />
+				<include name="**/*.class" />
+				<include name="**/*.class" />
+			</fileset>
+		</jar>
+		<jar jarfile="${distExperimenter}/Experimenter.src.jar">
+			<fileset dir="${srcExperimenter}">
+				<include name="**/*.java" />
+				<include name="**/*.png" />
+				<include name="**/*.xsl" />
+			</fileset>
+        </jar>
+		<jar jarfile="${distExperimenter}/Experimenter.addon.jar">
+			<manifest>
+				<attribute name="Built-By" value="${user.name}" />
+			</manifest>
+			<fileset dir="${buildExperimenter}">
+				<include name="**/*.class" />
+				<include name="**/*.class" />
+				<include name="**/*.properties" />
+			</fileset>
+		</jar>
+	</target>
+
+	<!-- run beast.jar -->
+	<target name="run_Experimenter">
+		<java jar="${distExperimenter}/Experimenter.jar" fork="true" />
+	</target>
+
+	
+	<!-- JUnit test -->
+	<target name="junitExperimenter">
+		<mkdir dir="${report}" />
+		<junit printsummary="yes"> <!--showoutput='yes'-->
+			<classpath>
+				<path refid="classpath" />
+				<path location="${buildExperimenter}" />
+			</classpath>
+
+			<formatter type="xml" />
+
+			<batchtest fork="yes" todir="${report}">
+				<fileset dir="${srcExperimenter}">
+                    <include name="test/**/*Test.java"/>                                         
+				</fileset>
+				<fileset dir="${srcBeast2}">
+                    <include name="test/beast/integration/**/*Test.java"/>                                         
+                    <exclude name="test/beast/integration/**/ResumeTest.java"/>                                         
+				</fileset>
+			</batchtest>
+		</junit>
+		<echo message="JUnit test finished." />
+	</target>
+    
+    <target name="junitreport">
+		<junitreport todir="${report}">
+			<fileset dir="${report}" includes="*.xml"/>
+			<report format="frames" todir="${report}"/>
+		</junitreport>
+		<echo message="JUnit test report finished." />
+	</target>
+
+
+	<target name="addon"
+	        depends="build_jar_all_Experimenter_NoJUnitTest"
+	        description="release BEAST 2 add-on version of Experimenter">
+
+		<delete dir="${Add_on_dir}" />
+		<!-- Create the release directory -->
+		<mkdir dir="${Add_on_dir}" />
+		<mkdir dir="${Add_on_dir}/lib" />
+		<mkdir dir="${Add_on_dir}/examples" />
+		<mkdir dir="${Add_on_dir}/templates" />
+
+		<copy todir="${Add_on_dir}">
+			<fileset file="version.xml"/>
+		</copy>
+		<!--
+		<copy todir="${Add_on_dir}/examples">
+			<fileset dir="examples" />
+		</copy>
+		-->
+		<copy todir="${Add_on_dir}/lib">
+			<fileset dir="${distExperimenter}" includes="Experimenter.addon.jar" />
+		</copy>
+		<copy todir="${Add_on_dir}">
+			<fileset dir="${distExperimenter}" includes="Experimenter.src.jar" />
+		</copy>
+		<!--
+		<copy todir="${Add_on_dir}/templates">
+			<fileset file="templates/methods.csv" />
+		</copy>
+		-->
+
+		<jar jarfile="${distExperimenter}/Experimenter.addon.v${version}.zip">
+			<fileset dir="${Add_on_dir}">
+				<include name="**/*" />
+			</fileset>
+        </jar>
+		<echo message="Add-on version v${version} release is finished." />
+	</target>
+
+</project>

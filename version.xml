@@ -1,0 +1,19 @@
+<package name='Experimenter' version='0.0.1'>
+	<depends on='beast2' atleast='2.6.0'/>
+	<depends on='BEASTLabs' atleast='1.9.0'/>
+	<depends on='MASTER' atleast='5.0.0'/>
+
+<packageapp description="CoverageCalculator"
+              class="beast.experimente.CoverageCalculator"
+              args=""
+            />
+<packageapp description="CoverageTestXMLGenerator"
+              class="beast.experimente.CoverageTestXMLGenerator"
+              args=""
+            />
+<packageapp description="TraceKSStats"
+              class="beast.experimente.TraceKSStats"
+              args=""
+            />
+            
+</package>
