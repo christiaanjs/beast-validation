@@ -1,6 +1,7 @@
 package beast.experimenter;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Arrays;
 
@@ -92,8 +93,6 @@ public class SBCAnalyser extends Runnable {
 				}
 
 				int  [] bins = new int[binCount];
-				//Arrays.sort(trueValues);
-				Arrays.sort(estimates);
 				
 //				double [] binBoundaries = new double[binCount - 1];
 //				for (int k = 0; k < binCount-1; k++) {
@@ -102,28 +101,35 @@ public class SBCAnalyser extends Runnable {
 //				}
 
 				boolean empiricalBins = useRankedBinsInput.get();
-				double [] binBoundaries = new double[binCount - 1];
-				if (empiricalBins) {
-					for (int k = 0; k < binCount-1; k++) {
-						int j = (int) (estimates.length * (k+1.0)/binCount);
-						binBoundaries[k] = (estimates[j] + estimates[j+1]) / 2.0;
-					}
-				}
 
-				
+				int L = estimates.length / trueValues.length;
 				for (int j = 0; j < trueValues.length; j++) {
+					double [] estimatesX = new double[L];
+					for (int k = 0; k < L; k++) {
+						estimatesX[k] = estimates[j * L + k];
+					}
+					Arrays.sort(estimatesX);
+					
 					if (empiricalBins) {
+						double [] binBoundaries = new double[binCount - 1];
+						if (empiricalBins) {
+							for (int k = 0; k < binCount-1; k++) {
+								int m = (int) (estimatesX.length * (k+1.0)/binCount);
+								binBoundaries[k] = (estimatesX[m] + estimatesX[m+1]) / 2.0;
+							}
+						}
+
 						int bin = Arrays.binarySearch(binBoundaries, trueValues[j]);
 						if (bin < 0) {
 							bin = -bin-1;
 						}
 						bins[bin]++;
 					} else {
-						int rank = Arrays.binarySearch(estimates, trueValues[j]);
+						int rank = Arrays.binarySearch(estimatesX, trueValues[j]);
 						if (rank < 0) {
 							rank = 1-rank;
 						}
-						int bin = rank * binCount / estimates.length;
+						int bin = rank * binCount / L;
 						if (bin == bins.length) {
 							bin--;
 						}
@@ -160,7 +166,7 @@ public class SBCAnalyser extends Runnable {
 					}
 					
 					PrintStream svg = new PrintStream(svgdir.getPath() +"/" + label + ".svg");
-					svg.println("<svg class=\"chart\" width=\"1044\" height=\"760\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">");
+					svg.println("<svg class=\"chart\" width=\"1040\" height=\"760\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">");
 					
 					// axes
 					svg.println("<rect x='15' width=\"1000\" height=\"700\" style=\"fill:none;stroke-width:1;stroke:rgb(0,0,0)\"/>");
@@ -177,7 +183,7 @@ public class SBCAnalyser extends Runnable {
 
 					
 					for (int j = 0; j < binCount; j++) {
-						svg.println("  <rect x=\""+j+"\" y=\"0\" width=\"0.9\" height=\""+bins[j]+"\" style=\"fill:#faa;\"/>");
+						svg.println("  <rect x=\""+j+"\" y=\"0\" width=\"0.95\" height=\""+bins[j]+"\" style=\"fill:#9a5753;stroke-width:0.05;stroke:#8b3d37\"/>");
 						if (j % 10 == 0) {
 						// ticks
 						//	svg.println("<line y1='0' y2='-1' x1='" + (j+0.45) + "' x2='" + (j+0.45) + "' style='stroke-width:0.1;stroke:rgb(0,0,0)'/>");
@@ -186,17 +192,24 @@ public class SBCAnalyser extends Runnable {
 					svg.println("</g>");
 					svg.println("<text x='0' y='10'>" + max + "</text>");
 					svg.println("<text x='0' y='700'>0</text>");
-					for (int j = 0; j < binCount; j+=10) {
-						int x = 10 + j*1000/binCount + 500/binCount;
+					svg.println("<text x='"+(10+500/binCount)+"' y='720'>" + 1 + "</text>");
+					for (int j = 10; j <= binCount; j+=10) {
+						int x = 10 + j*1000/binCount - 500/binCount;
 						int y = 720;
 						svg.println("<text x='"+x+"' y='"+y+"'>" + j + "</text>");
 					}
+					svg.println("<text x='1020' y='"+(705-dy * pUp)+"'>" + pUp + "</text>");
+					svg.println("<text x='1020' y='"+(705-dy * pUp95)+"'>" + pUp95 + "</text>");
+					svg.println("<text x='1020' y='"+(705-dy * pExp)+"'>" + pExp + "</text>");
+					svg.println("<text x='1020' y='"+(705-dy * pLow95)+"'>" + pLow95 + "</text>");
+					svg.println("<text x='1020' y='"+(705-dy * pLow)+"'>" + pLow + "</text>");
+
 					svg.println("</svg>");
 					svg.close();
 					
 					html.println("<h3>" + label + "</h3>");
+					html.println("<p>Missed: " + missed + "</p><p>");
 					html.println("<img src=\"" + label + ".svg\">");
-					html.println("<p>Missed: " + missed);
 				}
 			}
 		}
@@ -205,9 +218,17 @@ public class SBCAnalyser extends Runnable {
 		if (html != null) {
 			//html.println("Expected number of misses: " + 0.05 * binom.getNumberOfTrials());
 			html.println("</body>\n</html>");
+			html.close();
+			
+			try {
+				Application.openUrl("file://" + svgdir.getPath()+"/SBC.html");
+			} catch (IOException e) {
+				e.printStackTrace();
+				Log.warning("Output in " + svgdir.getPath()+"/SBC.html");
+			}
 		}
 
-	
+		Log.warning("Done!");	
 	}
 
 	public static void main(String[] args) throws Exception {

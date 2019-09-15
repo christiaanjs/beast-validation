@@ -16,4 +16,8 @@
               args=""
             />
             
+<packageapp description="SBCAnalyser"
+              class="beast.experimente.SBCAnalyser"
+              args=""
+            />
 </package>
