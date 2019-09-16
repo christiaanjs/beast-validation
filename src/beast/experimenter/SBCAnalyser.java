@@ -24,7 +24,8 @@ public class SBCAnalyser extends Runnable {
 	final public Input<File> logFileInput = new Input<>("log", "log file containing actual values", Validate.REQUIRED);
 	final public Input<Integer> skipLogLinesInput = new Input<>("skip", "numer of log file lines to skip", 1);
 	final public Input<File> logAnalyserFileInput = new Input<>("logAnalyser", "file produced by loganalyser tool using the -oneline option, containing estimated values", Validate.REQUIRED);
-	final public Input<Integer> binCountInput = new Input<>("bins", "number of bins to represent prior distribution", 21);
+	final public Input<Integer> binCountInput = new Input<>("bins", "number of bins to represent prior distribution. "
+			+ "If not specified (or not positive) use number of samples from posterior + 1 (L+1 in the paper)", -1);
 
 	final public Input<OutFile> outputInput = new Input<>("outputDir", "output directory for SVG bar charts",
 			new OutFile("[[none]]"));
@@ -62,7 +63,16 @@ public class SBCAnalyser extends Runnable {
 		LogAnalyser estimated = new LogAnalyser(logAnalyserFileInput.get().getAbsolutePath(), 0, true, false);
 		int skip = skipLogLinesInput.get();
 
+		
+		int L = estimated.getTrace(0).length / (truth.getTrace(0).length - skip);
+
 		int binCount = binCountInput.get();
+		if (binCount <= 0) {
+			binCount = L + 1;
+		}
+		if (binCount > truth.getTrace(0).length - skip) {
+			throw new IllegalArgumentException("Number of bins (or samples per posterior) should be less than number of prior samples");
+		}
 		
 		BinomialDistribution binom = new BinomialDistributionImpl(truth.getTrace(0).length, 1.0/binCount);
 		int pLow = binom.inverseCumulativeProbability(0.005);
@@ -102,7 +112,7 @@ public class SBCAnalyser extends Runnable {
 
 				boolean empiricalBins = useRankedBinsInput.get();
 
-				int L = estimates.length / trueValues.length;
+				// int L = estimates.length / trueValues.length;
 				for (int j = 0; j < trueValues.length; j++) {
 					double [] estimatesX = new double[L];
 					for (int k = 0; k < L; k++) {
@@ -113,9 +123,13 @@ public class SBCAnalyser extends Runnable {
 					if (empiricalBins) {
 						double [] binBoundaries = new double[binCount - 1];
 						if (empiricalBins) {
-							for (int k = 0; k < binCount-1; k++) {
-								int m = (int) (estimatesX.length * (k+1.0)/binCount);
-								binBoundaries[k] = (estimatesX[m] + estimatesX[m+1]) / 2.0;
+							if (binCountInput.get() <= 0) {
+								binBoundaries = estimatesX;
+							} else { 
+								for (int k = 0; k < binCount-1; k++) {
+									int m = (int) (estimatesX.length * (k+1.0)/binCount);
+									binBoundaries[k] = (estimatesX[m] + estimatesX[m+1]) / 2.0;
+								}
 							}
 						}
 
