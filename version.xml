@@ -4,20 +4,20 @@
 	<depends on='MASTER' atleast='5.0.0'/>
 
 <packageapp description="CoverageCalculator"
-              class="beast.experimente.CoverageCalculator"
+              class="beast.experimenter.CoverageCalculator"
               args=""
             />
 <packageapp description="CoverageTestXMLGenerator"
-              class="beast.experimente.CoverageTestXMLGenerator"
+              class="beast.experimenter.CoverageTestXMLGenerator"
               args=""
             />
 <packageapp description="TraceKSStats"
-              class="beast.experimente.TraceKSStats"
+              class="beast.experimenter.TraceKSStats"
               args=""
             />
             
 <packageapp description="SBCAnalyser"
-              class="beast.experimente.SBCAnalyser"
+              class="beast.experimenter.SBCAnalyser"
               args=""
             />
 </package>
