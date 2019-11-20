@@ -27,7 +27,7 @@ public class CoverageTestXMLGenerator extends beast.core.Runnable {
 	final public Input<String> outDirInput = new Input<>("outDir",
 			"output directory where generated XML goes (as sub dir of working dir)", "mcmc");
 	final public Input<LogFile> logFileInput = new Input<>("logFile",
-			"trace log file containing model paramter values to use for generating sequence data");
+			"trace log file containing model parameter values to use for generating sequence data");
 	final public Input<TreeFile> treeFileInput = new Input<>("treeFile",
 			"tree log file containing trees to generate sequence data on");
 	final public Input<XMLFile> xmlFileInput = new Input<>("xmlFile",

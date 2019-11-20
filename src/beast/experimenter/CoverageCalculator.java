@@ -65,29 +65,34 @@ public class CoverageCalculator extends Runnable {
 		
 		for (int i = 0; i < truth.getLabels().size(); i++) {
 			String label = truth.getLabels().get(i);
-			Double [] trueValues = truth.getTrace(label);
-			Double [] lows = estimated.getTrace(label+".95%HPDlo");
-			Double [] upps = estimated.getTrace(label+".95%HPDup");
-			Double [] ess = estimated.getTrace(label+".ESS");
-			if (lows == null || upps == null) {
-				Log.warning("Skipping " + label);
-			} else {
-				int covered = 0;
-				double minESS = Double.POSITIVE_INFINITY;
-				double meanESS = 0;
-				for (int j = 0; j < trueValues.length - skip; j++) {
-					if (lows[j] <= trueValues[j + skip] && trueValues[j + skip] <= upps[j]) {
-						covered++;
-					} else {
-						// System.out.println(lows[j] +"<=" + trueValues[j + skip] +"&&" + trueValues[j + skip] +" <=" + upps[j]);
+			try {
+				Double [] trueValues = truth.getTrace(label);
+				Double [] lows = estimated.getTrace(label+".95%HPDlo");
+				Double [] upps = estimated.getTrace(label+".95%HPDup");
+				Double [] ess = estimated.getTrace(label+".ESS");
+				if (lows == null || upps == null) {
+					Log.warning("Skipping " + label);
+				} else {
+					int covered = 0;
+					double minESS = Double.POSITIVE_INFINITY;
+					double meanESS = 0;
+					for (int j = 0; j < trueValues.length - skip; j++) {
+						if (lows[j] <= trueValues[j + skip] && trueValues[j + skip] <= upps[j]) {
+							covered++;
+						} else {
+							// System.out.println(lows[j] +"<=" + trueValues[j + skip] +"&&" + trueValues[j + skip] +" <=" + upps[j]);
+						}
+						minESS = Math.min(minESS, ess[j]);
+						meanESS += ess[j];
 					}
-					minESS = Math.min(minESS, ess[j]);
-					meanESS += ess[j];
+					meanESS /= (trueValues.length - skip);
+					Log.info(label + (label.length() < space.length() ? space.substring(label.length()) : " ") + 
+							formatter2.format(covered) + "\t   " + 
+							formatter.format(meanESS) + "  " + formatter.format(minESS));
 				}
-				meanESS /= (trueValues.length - skip);
-				Log.info(label + (label.length() < space.length() ? space.substring(label.length()) : " ") + 
-						formatter2.format(covered) + "\t   " + 
-						formatter.format(meanESS) + "  " + formatter.format(minESS));
+			} catch (ArrayIndexOutOfBoundsException e) {
+				// we get here if some item in the true log is not available in the summary log
+				Log.err("Skipping " + label);
 			}
 		}
 
@@ -95,94 +100,99 @@ public class CoverageCalculator extends Runnable {
 			formatter = new DecimalFormat("#0.0000");
         	for (int i = 0; i < truth.getLabels().size(); i++) {
     			String label = truth.getLabels().get(i);
-    			Double [] trueValues = truth.getTrace(label);
-    			Double [] estimates = estimated.getTrace(label+".mean");
-    			Double [] lows = estimated.getTrace(label+".95%HPDlo");
-    			Double [] upps = estimated.getTrace(label+".95%HPDup");
-        		// out.print(trueValues[skip + k] + "\t" + estimates[k] + "\t");
-
-        	
-        	
-        	
-    			Log.warning("Writing to file " + svgdir.getPath()+"/" + label + ".tsv");
-				PrintStream tsv = new PrintStream(svgdir.getPath() +"/" + label + ".tsv");
-				tsv.println("truth\testimates\t95HPDlow\t95HPDup");
-				for (int j = 0; j < estimates.length - skip; j++) {
-					tsv.println(trueValues[j + skip] + "\t" + estimates[j] + "\t" + lows[j] + "\t" + upps[j]);
-				}
-				tsv.close();
-        	
-
-    			Log.warning("Writing to file " + svgdir.getPath()+"/" + label + ".svg");
-				PrintStream svg = new PrintStream(svgdir.getPath() +"/" + label + ".svg");
-				svg.println("<svg class=\"chart\" width=\"1080\" height=\"760\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">");
-				// define clip path for graph
-				svg.println("<defs>");
-				svg.println("<clipPath id=\"cut-off-graph\">");
-				svg.println("<rect x='15' width=\"1000\" height=\"700\" />");
-				svg.println("</clipPath>");
-				svg.println("</defs>");
-				
-				// axes
-				svg.println("<rect x='15' width=\"1000\" height=\"700\" style=\"fill:none;stroke-width:1;stroke:rgb(0,0,0)\"/>");
-				
-				// keep everything sticking out of graph hidden
-				svg.println("<g clip-path=\"url(#cut-off-graph)\">");
-
-				double min = estimates[0];
-				double max = estimates[0];
-				double minx = trueValues[skip];
-				double maxx = trueValues[skip];
-				for (int j = 0; j < estimates.length - skip; j++) {
-					min = Math.min(min, lows[j]);
-					max = Math.max(max, upps[j]);
-					minx = Math.min(minx, trueValues[j + skip]);
-					maxx = Math.max(maxx, trueValues[j + skip]);
-				}
-				double range = max - min;
-				double rangex = maxx - minx;
-				double w = rangex / 100.0;
-				
-				
-				double dx = 990 / rangex;
-				double dy= 700 / range;
-
-				
-				
-				// permissable area
-				svg.println("<g transform=\"translate(" + (15-minx*dx) + "," + (700+min*dy) +") scale("+dx+",-"+dy+")\">");
-
-				// x == y line
-				svg.println("<line x1='"+minx+"' y1='"+minx+"' x2=\""+maxx+"\" y2=\""+maxx+"\" style=\"fill:none;stroke-width:"+w/3+";stroke:rgb(0,0,0)\"/>");
-				
-				int covered = 0;
-				for (int j = 0; j < estimates.length - skip; j++) {
-					double y = lows[j];
-					double h = upps[j] - lows[j];
-					double x = trueValues[j + skip]; 
-					if (lows[j] <= trueValues[j + skip] && trueValues[j + skip] <= upps[j]) {
-						svg.println("  <rect x=\""+x+"\" y=\"" + y+ "\" width=\""+w+"\" height=\""+h+"\" style=\"fill:#57539a;stroke-width:"+ w/10+";stroke:#8b3d37;opacity:0.5\"/>");
-						covered++;
-					} else {
-						svg.println("  <rect x=\""+x+"\" y=\"" + y+ "\" width=\""+w+"\" height=\""+h+"\" style=\"fill:#9a5753;stroke-width:"+ w/10+";stroke:#373d8b;opacity:0.5\"/>");
+    			try {
+	    			Double [] trueValues = truth.getTrace(label);
+	    			Double [] estimates = estimated.getTrace(label+".mean");
+	    			Double [] lows = estimated.getTrace(label+".95%HPDlo");
+	    			Double [] upps = estimated.getTrace(label+".95%HPDup");
+	        		// out.print(trueValues[skip + k] + "\t" + estimates[k] + "\t");
+	
+	        	
+	        	
+	        	
+	    			Log.warning("Writing to file " + svgdir.getPath()+"/" + label + ".tsv");
+					PrintStream tsv = new PrintStream(svgdir.getPath() +"/" + label + ".tsv");
+					tsv.println("truth\testimates\t95HPDlow\t95HPDup");
+					for (int j = 0; j < estimates.length - skip; j++) {
+						tsv.println(trueValues[j + skip] + "\t" + estimates[j] + "\t" + lows[j] + "\t" + upps[j]);
 					}
-				}
-				for (int j = 0; j < estimates.length - skip; j++) {
-					double y = estimates[j];
-					double x = trueValues[j + skip] + w/2; 
-					svg.println("<circle cx='"+x+"' cy='"+y+"' r=\""+w/3+"\" stroke=\"black\" stroke-width=\""+w/3+"\" fill=\"black\"/>");
-				}
-				svg.println("</g>\n</g>");
-				svg.println("<text x='1020' y='15'>" + formatter.format(max) + "</text>");
-				svg.println("<text x='1020' y='700'>" + formatter.format(min) + "</text>");
-				svg.println("<text x='10' y='712'>" + formatter.format(minx) + "</text>");
-				svg.println("<text x='980' y='712'>" + formatter.format(maxx) + "</text>");
-				svg.println("</svg>");
-				svg.close();
-				
-				html.println("<h3>" + label + "</h3>");
-				html.println("<p>Coverage: " + covered + "</p><p>");
-				html.println("<img src=\"" + label + ".svg\">");
+					tsv.close();
+	        	
+	
+	    			Log.warning("Writing to file " + svgdir.getPath()+"/" + label + ".svg");
+					PrintStream svg = new PrintStream(svgdir.getPath() +"/" + label + ".svg");
+					svg.println("<svg class=\"chart\" width=\"1080\" height=\"760\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">");
+					// define clip path for graph
+					svg.println("<defs>");
+					svg.println("<clipPath id=\"cut-off-graph\">");
+					svg.println("<rect x='15' width=\"1000\" height=\"700\" />");
+					svg.println("</clipPath>");
+					svg.println("</defs>");
+					
+					// axes
+					svg.println("<rect x='15' width=\"1000\" height=\"700\" style=\"fill:none;stroke-width:1;stroke:rgb(0,0,0)\"/>");
+					
+					// keep everything sticking out of graph hidden
+					svg.println("<g clip-path=\"url(#cut-off-graph)\">");
+	
+					double min = estimates[0];
+					double max = estimates[0];
+					double minx = trueValues[skip];
+					double maxx = trueValues[skip];
+					for (int j = 0; j < estimates.length - skip; j++) {
+						min = Math.min(min, lows[j]);
+						max = Math.max(max, upps[j]);
+						minx = Math.min(minx, trueValues[j + skip]);
+						maxx = Math.max(maxx, trueValues[j + skip]);
+					}
+					double range = max - min;
+					double rangex = maxx - minx;
+					double w = rangex / 100.0;
+					
+					
+					double dx = 990 / rangex;
+					double dy= 700 / range;
+	
+					
+					
+					// permissable area
+					svg.println("<g transform=\"translate(" + (15-minx*dx) + "," + (700+min*dy) +") scale("+dx+",-"+dy+")\">");
+	
+					// x == y line
+					svg.println("<line x1='"+minx+"' y1='"+minx+"' x2=\""+maxx+"\" y2=\""+maxx+"\" style=\"fill:none;stroke-width:"+w/3+";stroke:rgb(0,0,0)\"/>");
+					
+					int covered = 0;
+					for (int j = 0; j < estimates.length - skip; j++) {
+						double y = lows[j];
+						double h = upps[j] - lows[j];
+						double x = trueValues[j + skip]; 
+						if (lows[j] <= trueValues[j + skip] && trueValues[j + skip] <= upps[j]) {
+							svg.println("  <rect x=\""+x+"\" y=\"" + y+ "\" width=\""+w+"\" height=\""+h+"\" style=\"fill:#57539a;stroke-width:"+ w/10+";stroke:#8b3d37;opacity:0.5\"/>");
+							covered++;
+						} else {
+							svg.println("  <rect x=\""+x+"\" y=\"" + y+ "\" width=\""+w+"\" height=\""+h+"\" style=\"fill:#9a5753;stroke-width:"+ w/10+";stroke:#373d8b;opacity:0.5\"/>");
+						}
+					}
+					for (int j = 0; j < estimates.length - skip; j++) {
+						double y = estimates[j];
+						double x = trueValues[j + skip] + w/2; 
+						svg.println("<circle cx='"+x+"' cy='"+y+"' r=\""+w/3+"\" stroke=\"black\" stroke-width=\""+w/3+"\" fill=\"black\"/>");
+					}
+					svg.println("</g>\n</g>");
+					svg.println("<text x='1020' y='15'>" + formatter.format(max) + "</text>");
+					svg.println("<text x='1020' y='700'>" + formatter.format(min) + "</text>");
+					svg.println("<text x='10' y='712'>" + formatter.format(minx) + "</text>");
+					svg.println("<text x='980' y='712'>" + formatter.format(maxx) + "</text>");
+					svg.println("</svg>");
+					svg.close();
+					
+					html.println("<h3>" + label + "</h3>");
+					html.println("<p>Coverage: " + covered + "</p><p>");
+					html.println("<img src=\"" + label + ".svg\">");
+    			} catch (ArrayIndexOutOfBoundsException e) {
+    				// we get here if some item in the true log is not available in the summary log
+    				Log.err("Skipping " + label);
+    			}
 			}
 
 			html.println("</body>\n</html>");
