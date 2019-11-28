@@ -1,8 +1,7 @@
 package beast.validation.statistics;
 
+
 import beast.core.Input;
-import beast.evolution.tree.Node;
-import com.sun.org.apache.xpath.internal.operations.Bool;
 
 import java.io.PrintStream;
 import java.util.Arrays;
