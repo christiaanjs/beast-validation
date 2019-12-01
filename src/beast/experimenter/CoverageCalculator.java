@@ -6,7 +6,10 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.util.HashMap;
+import java.util.Map;
 
+import beast.app.beauti.BeautiDoc;
 import beast.app.util.Application;
 import beast.app.util.OutFile;
 import beast.core.Description;
@@ -22,16 +25,26 @@ public class CoverageCalculator extends Runnable {
 	final public Input<Integer> skipLogLinesInput = new Input<>("skip", "numer of log file lines to skip", 1);
 	final public Input<File> logAnalyserFileInput = new Input<>("logAnalyser", "file produced by loganalyser tool using the -oneline option, containing estimated values", Validate.REQUIRED);
 	final public Input<OutFile> outputInput = new Input<>("out", "output directory for tsv files with truth and mean estimates. Not produced if not specified -- directory is also used to generate svg bargraphs and html report");
-	final public Input<Boolean> recogniseBooleansInput = new Input<>("recogniseBooleans", "if true, entries starting with \"has\", \"use\" and \"is\" are treated as booleans when calculaing 95%HPD coverage", true);
+	final public Input<File> typesInput = new Input<>("typeFile", "if specified, the type file is a tab delimited file with first column containing entry names as they appear in the trace log file, and second column "
+			+ "variable type, d for double, b for binary, c for categorical, for example:\n"
+			+ "variable\ttype\n"
+			+ "birthRate\td\n"
+			+ "kappa\td\n"
+			+ "hasGamma\t\b"
+			+ "modelIndicator\tc\n"
+			+ "Items that are not specified are considered to be of type double");
 
 	final static String space = "                                                ";
-	
+
+	Map<String, String> typeMap;
 	@Override
 	public void initAndValidate() {
 	}
 
 	@Override
 	public void run() throws Exception {
+		typeMap = processTypes();
+		
 		LogAnalyser truth = new LogAnalyser(logFileInput.get().getAbsolutePath(), 0, true, false);
 		LogAnalyser estimated = new LogAnalyser(logAnalyserFileInput.get().getAbsolutePath(), 0, true, false);
 		int skip = skipLogLinesInput.get();
@@ -66,6 +79,7 @@ public class CoverageCalculator extends Runnable {
 		Log.info(space + "coverage Mean ESS Min ESS");
 		
 		int [] coverage = new int[truth.getLabels().size()];
+		int [] meanOver_ = new int[truth.getLabels().size()];
 		double [] meanESS_ = new double[truth.getLabels().size()];
 		double [] minESS_ = new double[truth.getLabels().size()];
 		
@@ -80,10 +94,11 @@ public class CoverageCalculator extends Runnable {
 				if (lows == null || upps == null) {
 					Log.warning("Skipping " + label);
 				} else {
-					int covered = 0;
+					int covered = 0, meanOver = 0;
 					double minESS = Double.POSITIVE_INFINITY;
 					double meanESS = 0;
-					if ((label.startsWith("has") || label.startsWith("use") || label.startsWith("is")) && recogniseBooleansInput.get()) {
+					switch (getType(label)) {
+					case "b" :
 						// boolean trait, identified by labels starting with "has" or "use" or "is"
 						for (int j = 0; j < trueValues.length - skip; j++) {
 							if (trueValues[j + skip] == 0) {
@@ -97,22 +112,31 @@ public class CoverageCalculator extends Runnable {
 							}
 							minESS = Math.min(minESS, ess[j]);
 							meanESS += ess[j];
-						}						
-					} else {
+						}
+						break;
+					case "d":
+					case "c":
 						// real valued trait
 						for (int j = 0; j < trueValues.length - skip; j++) {
 							if (lows[j] <= trueValues[j + skip] && trueValues[j + skip] <= upps[j]) {
 								covered++;
 								// System.out.println(lows[j] +"<=" + trueValues[j + skip] +"&&" + trueValues[j + skip] +" <=" + upps[j]);
 							}
+							if (trueValues[j + skip] > meanValues[j]) {
+								meanOver++;
+							}
 							minESS = Math.min(minESS, ess[j]);
 							meanESS += ess[j];
 						}
+						break;
+					default:
+						throw new IllegalArgumentException("type should be b,c or d, not " + getType(label));
 					}
 					meanESS /= (trueValues.length - skip);
 					meanESS_[i] = meanESS;
 					minESS_[i] = minESS;
 					coverage[i] = covered;
+					meanOver_[i] = meanOver;
 					Log.info(label + (label.length() < space.length() ? space.substring(label.length()) : " ") + 
 							formatter2.format(covered) + "\t   " + 
 							formatter.format(meanESS) + "  " + formatter.format(minESS));
@@ -183,34 +207,80 @@ public class CoverageCalculator extends Runnable {
 	
 					
 					
-					// permissable area
-					svg.println("<g transform=\"translate(" + (15-minx*dx) + "," + (700+min*dy) +") scale("+dx+",-"+dy+")\">");
-	
-					// x == y line
-					svg.println("<line x1='"+minx+"' y1='"+minx+"' x2=\""+maxx+"\" y2=\""+maxx+"\" style=\"fill:none;stroke-width:"+w/3+";stroke:rgb(0,0,0)\"/>");
 					
-					int covered = 0;
-					for (int j = 0; j < estimates.length; j++) {
-						double y = lows[j];
-						double h = upps[j] - lows[j];
-						double x = trueValues[j + skip]; 
-						if (lows[j] <= trueValues[j + skip] && trueValues[j + skip] <= upps[j]) {
-							svg.println("  <rect x=\""+x+"\" y=\"" + y+ "\" width=\""+w+"\" height=\""+h+"\" style=\"fill:#5099ff;stroke-width:"+ w/10+";stroke:#8b3d37;opacity:0.5\"/>");
-							covered++;
-						} else {
-							svg.println("  <rect x=\""+x+"\" y=\"" + y+ "\" width=\""+w+"\" height=\""+h+"\" style=\"fill:#fa5753;stroke-width:"+ w/10+";stroke:#373d8b;opacity:0.85\"/>");
+					switch (getType(label)) {
+					case "b" :
+					{
+						svg.println("<g transform=\"translate(0,700) scale(1,-1)\">");
+						
+						// boolean trait, identified by labels starting with "has" or "use" or "is"
+						int [] bins = new int[20];
+						for (int j = 0; j < trueValues.length - skip; j++) {
+							bins[(int)((estimates[j] + 0.5/bins.length) * (bins.length - 1))]++;
 						}
+						int y = 0;
+						for (int j = 0; j < bins.length; j++) {
+							double x = 15+j * 1000 / bins.length;
+							double h = 700.0 * bins[j] / estimates.length;
+							String fill = "#5099ff";
+							if (trueValues[j + skip] == 0) {
+								if (j < 19) {
+									fill = "#5099ff";
+								} else {
+									fill = "#fa5753";
+								}
+							} else {
+								if (j > 1) {
+									fill = "#5099ff";
+								} else {
+									fill = "#fa5753";
+								}
+							}
+							svg.println("  <rect x=\""+x+"\" y=\"" + y+ "\" width=\""+(1000/bins.length)+"\" height=\""+h+"\" style=\"fill:" + fill + ";stroke-width:1;stroke:#8b3d37;opacity:0.5\"/>");
+						}
+						svg.println("</g>");
+						svg.println("</g>");
+						svg.println("<text x='0' y='0' transform='rotate(90 0 0) translate(0,-1025)' style='font-size:46px'>1.0</text>");
+						svg.println("<text x='0' y='0' transform='rotate(90 0 0) translate(640,-1025)' style='font-size:46px'>0.0</text>");
+						svg.println("<text x='10' y='735' style='font-size:46px'>0.0</text>");
+						svg.println("<text x='950' y='735' style='font-size:46px'>1.0</text>");
 					}
-					for (int j = 0; j < estimates.length; j++) {
-						double y = estimates[j];
-						double x = trueValues[j + skip] + w/2; 
-						svg.println("<circle cx='"+x+"' cy='"+y+"' r=\""+w/3+"\" stroke=\"black\" stroke-width=\""+w/3+"\" fill=\"black\"/>");
+						break;
+					case "c":
+					case "d":
+					{
+						// permissable area
+						svg.println("<g transform=\"translate(" + (15-minx*dx) + "," + (700+min*dy) +") scale("+dx+",-"+dy+")\">");
+		
+						// x == y line
+						svg.println("<line x1='"+minx+"' y1='"+minx+"' x2=\""+maxx+"\" y2=\""+maxx+"\" style=\"fill:none;stroke-width:"+w/3+";stroke:rgb(0,0,0)\"/>");
+
+						for (int j = 0; j < estimates.length; j++) {
+							double y = lows[j];
+							double h = upps[j] - lows[j];
+							double x = trueValues[j + skip]; 
+							if (lows[j] <= trueValues[j + skip] && trueValues[j + skip] <= upps[j]) {
+								svg.println("  <rect x=\""+x+"\" y=\"" + y+ "\" width=\""+w+"\" height=\""+h+"\" style=\"fill:#5099ff;stroke-width:"+ w/10+";stroke:#8b3d37;opacity:0.5\"/>");
+							} else {
+								svg.println("  <rect x=\""+x+"\" y=\"" + y+ "\" width=\""+w+"\" height=\""+h+"\" style=\"fill:#fa5753;stroke-width:"+ w/10+";stroke:#373d8b;opacity:0.85\"/>");
+							}
+						}
+						for (int j = 0; j < estimates.length; j++) {
+							double y = estimates[j];
+							double x = trueValues[j + skip] + w/2; 
+							svg.println("<circle cx='"+x+"' cy='"+y+"' r=\""+w/3+"\" stroke=\"black\" stroke-width=\""+w/3+"\" fill=\"black\"/>");
+						}
+						svg.println("</g>");
+						svg.println("</g>");
+						svg.println("<text x='0' y='0' transform='rotate(90 0 0) translate(0,-1025)' style='font-size:46px'>" + formatter.format(max) + "</text>");
+						svg.println("<text x='0' y='0' transform='rotate(90 0 0) translate(600,-1025)' style='font-size:46px'>" + formatter.format(min) + "</text>");
+						svg.println("<text x='10' y='735' style='font-size:46px'>" + formatter.format(minx) + "</text>");
+						svg.println("<text x='870' y='735' style='font-size:46px'>" + formatter.format(maxx) + "</text>");
+						break;
 					}
-					svg.println("</g>\n</g>");
-					svg.println("<text x='1020' y='15'>" + formatter.format(max) + "</text>");
-					svg.println("<text x='1020' y='700'>" + formatter.format(min) + "</text>");
-					svg.println("<text x='10' y='712'>" + formatter.format(minx) + "</text>");
-					svg.println("<text x='980' y='712'>" + formatter.format(maxx) + "</text>");
+					default:
+						// should never get here
+					}
 					svg.println("</svg>");
 					svg.close();
 					
@@ -220,8 +290,9 @@ public class CoverageCalculator extends Runnable {
 					html.println("<td>");
 					html.println("<h3>" + label + "</h3>");
 					html.println("<p>Coverage: " + coverage[i] + 
-							" mean ESS: " + formatter2.format(meanESS_[i]) + 
-							" minESS: " + formatter2.format(minESS_[i]) + "</p><p>");
+							" Mean: "  + meanOver_[i] + 
+							" ESS (mean/min): " + formatter2.format(meanESS_[i]) + 
+							"/" + formatter2.format(minESS_[i]) + "</p><p>");
 					html.println("<img width=\"350px\" src=\"" + label + ".svg\">");
 					html.println("</td>");
 					if ((k+1) % 4 == 0) {
@@ -248,6 +319,29 @@ public class CoverageCalculator extends Runnable {
 		Log.warning("Done!");	
 	}
 
+
+	private String getType(String label) {
+		if (typeMap.containsKey(label)) {
+			return typeMap.get(label);
+		}
+		// default to "double"
+		return "d";
+	}
+
+	private Map<String, String> processTypes() throws IOException {
+		Map<String,String> typeMap = new HashMap<>();
+		if (typesInput.get() != null && !typesInput.get().equals("[[None]]")) {
+			String types = BeautiDoc.load(typesInput.get());
+			String [] strs = types.split("\n");
+			for (String str : strs) {
+				String [] strs2 = str.split("\t");
+				if (strs2.length == 2) {
+					typeMap.put(strs2[0], strs2[1]);
+				}
+			}
+		}
+		return typeMap;
+	}
 
 	public static void main(String[] args) throws Exception {
 		new Application(new CoverageCalculator(), "Coverage Calculator", args);
