@@ -3,14 +3,14 @@ package beast.validation.statistics;
 import beast.core.Distribution;
 import beast.core.Input;
 import beast.core.parameter.RealParameter;
-import beast.evolution.speciation.SpeciesTreeDistribution;
-import javafx.util.Pair;
+import org.apache.commons.math3.util.Pair;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
 
 public class NumericalScoreFunctionStatistics extends Statistics {
 

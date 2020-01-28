@@ -30,7 +30,7 @@ public class CoverageCalculator extends Runnable {
 			+ "variable\ttype\n"
 			+ "birthRate\td\n"
 			+ "kappa\td\n"
-			+ "hasGamma\t\b"
+			+ "hasGamma\tb\n"
 			+ "modelIndicator\tc\n"
 			+ "Items that are not specified are considered to be of type double");
 
