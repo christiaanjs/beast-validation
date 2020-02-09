@@ -48,10 +48,18 @@ public class CoverageTestXMLGenerator extends beast.core.Runnable {
 	}
 
 	void process() throws IllegalArgumentException, IllegalAccessException, IOException, XMLParserException {
-		String dir = outDirInput.get();
-		String analysisXML = xmlFileInput.get().getAbsolutePath();
-		String wdir = workingDirInput.get().getAbsolutePath();
+		String wdir = workingDirInput.get().getAbsolutePath() + "/";
+		String dir = wdir + outDirInput.get();
+		String analysisXML = wdir + xmlFileInput.get().getAbsolutePath();
+		if (!new File(analysisXML).exists()) {
+			analysisXML = xmlFileInput.get().getAbsolutePath();
+		}
 
+		if (!new File(analysisXML).exists()) {
+			throw new IllegalArgumentException("Could not find template XML at " + wdir + analysisXML + " or " + analysisXML);
+		}
+		
+		
 		if (!(new File(dir).exists())) {
 			new File(dir).mkdirs();
 		}
@@ -104,7 +112,12 @@ public class CoverageTestXMLGenerator extends beast.core.Runnable {
 	}
 
 	public void run() throws Exception {
-		LogAnalyser trace = new LogAnalyser(logFileInput.get().getPath(), burnInPercentageInput.get(), true, false);
+		String wdir = workingDirInput.get().getAbsolutePath() + "/";
+		String traceFile = wdir + logFileInput.get().getPath();
+		if (!new File(traceFile).exists()) {
+			traceFile = logFileInput.get().getPath();
+		}
+		LogAnalyser trace = new LogAnalyser(traceFile, burnInPercentageInput.get(), true, false);
 
 		N = trace.getTrace(0).length;
 
@@ -122,8 +135,6 @@ public class CoverageTestXMLGenerator extends beast.core.Runnable {
 			shapes = trace.getTrace(getIndex(labels, "shape"));
 		}
 
-		String wdir = workingDirInput.get().getAbsolutePath();
-
 		Logger.FILE_MODE = beast.core.Logger.LogFileMode.overwrite;
 
 		// set up flags for BEAGLE -- YMMV
@@ -131,8 +142,11 @@ public class CoverageTestXMLGenerator extends beast.core.Runnable {
 		System.setProperty("beagle.preferred.flags", Long.toString(beagleFlags));
 
 		NexusParser parser = new beast.util.NexusParser();
-		File fin = treeFileInput.get();
-		parser.parseFile(fin);
+		String treeFile = wdir + treeFileInput.get().getName();
+		if (!new File(treeFile).exists()) {
+			treeFile = treeFileInput.get().getName();
+		}		
+		parser.parseFile(new File(treeFile));
 		trees = parser.trees;
 		int burnin = 0;
 		while (trees.size() > N) {
