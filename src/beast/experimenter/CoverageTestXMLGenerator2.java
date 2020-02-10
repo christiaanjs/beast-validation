@@ -24,7 +24,8 @@ public class CoverageTestXMLGenerator2 extends beast.core.Runnable {
 	final public Input<TreeFile> treeFileInput = new Input<>("treeFile",
 			"tree log file containing trees to generate sequence data on");
 	final public Input<File> geneTreeFileInput = new Input<>("geneTreeFile",
-			"configureation file with gene tree log file names, one per line");
+			"configueation file with gene tree identifiers and log file names, one per line separated by a tab,"
+			+ "for example \"gene1\t/xyz/abc/gene1.tree\ngene2\t/xyz/abc/gene2.tree\n");
 	final public Input<XMLFile> xmlFileInput = new Input<>("xmlFile",
 			"XML template file containing analysis to be merged with generated sequence data");
 	final public Input<Integer> skipLogLinesInput = new Input<>("skip", "numer of log file lines to skip", 1);
@@ -39,7 +40,7 @@ public class CoverageTestXMLGenerator2 extends beast.core.Runnable {
 	@Override
 	public void initAndValidate() {
 	}
-
+	
 	void process() throws IllegalArgumentException, IllegalAccessException, IOException, XMLParserException {
 		String wdir = workingDirInput.get().getAbsolutePath() + "/";
 		String dir = wdir + outDirInput.get();
@@ -166,7 +167,7 @@ public class CoverageTestXMLGenerator2 extends beast.core.Runnable {
 	}
 
 	public static void main(String[] args) throws Exception {
-		new Application(new CoverageTestXMLGenerator2(), "CoverageTestXMLGenerator", args);
+		new Application(new CoverageTestXMLGenerator2(), "CoverageTestXMLGenerator2", args);
 	}
 
 }
