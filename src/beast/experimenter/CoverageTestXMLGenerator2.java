@@ -1,5 +1,6 @@
 package beast.experimenter;
 
+import beast.evolution.tree.Node;
 import beast.evolution.tree.Tree;
 import beast.util.*;
 import beast.app.beauti.BeautiDoc;
@@ -68,11 +69,11 @@ public class CoverageTestXMLGenerator2 extends beast.core.Runnable {
 			
 			// replace species tree
 			Tree tree = trees.get(i);
-			xml = xml.replaceAll("\\$\\(tree\\)", tree.getRoot().toNewick());
+			xml = xml.replaceAll("\\$\\(tree\\)", toNewick(tree.getRoot()));
 			
 			// replace gene trees
 			for (int j = 0; j < geneTrees.length; j++) {
-				xml = xml.replaceAll("\\$\\(" + geneTreeNames[j] + "\\)", geneTrees[j].get(i).getRoot().toNewick());
+				xml = xml.replaceAll("\\$\\(" + geneTreeNames[j] + "\\)", toNewick(geneTrees[j].get(i).getRoot()));
 			}
 			
 			// replace parameters
@@ -90,6 +91,32 @@ public class CoverageTestXMLGenerator2 extends beast.core.Runnable {
 		System.err.println();
 	}
 
+	
+	private String toNewick(Node node) {
+	        final StringBuilder buf = new StringBuilder();
+	        if (!node.isLeaf()) {
+	            buf.append("(");
+	            boolean isFirst = true;
+	            for (Node child : node.getChildren()) {
+	                if (isFirst)
+	                    isFirst = false;
+	                else
+	                    buf.append(",");
+	                buf.append(toNewick(child));
+	            }
+	            buf.append(")");
+
+	        } else {
+	            if (node.getID() != null)
+	                buf.append(node.getID());
+	            else
+	                buf.append(node.getNr());
+	        }
+
+	        buf.append(":").append(node.getLength());
+	        return buf.toString();
+	}
+	
 	private String toString(Double x) {
 		String str = x.toString();
 		if (str.endsWith(".0")) {

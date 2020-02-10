@@ -27,8 +27,8 @@ name="alignment">
     
     <data
 id="dna"
-spec="SimulatedAlignment"
-name="alignment" siteModel="@SiteModel.s:dna" tree="@Tree.t:dna" branchRateModel="@RelaxedClock.c:dna" sequencelength="1000"/>
+spec="beast.app.seqgen.SimulatedAlignment"
+name="alignment" siteModel="@SiteModel.s:dna" tree="@Tree.t:dna" branchRateModel="@RelaxedClock.c:dna" sequencelength="1000" data="@dna0"/>
 
 
 
@@ -50,10 +50,10 @@ name="alignment" siteModel="@SiteModel.s:dna" tree="@Tree.t:dna" branchRateModel
 
 <run id="mcmc" spec="MCMC" chainLength="10000000">
     <state id="state" spec="State" storeEvery="100000">
-        <tree id="Tree.t:dna" spec="beast.evolution.tree.TreeParser" name="stateNode" IsLabelledNewick='true' taxa='@alignment'
+        <tree id="Tree.t:dna" spec="beast.util.TreeParser" name="stateNode" IsLabelledNewick='true'
                 newick='$(tree)'>
             <taxonset id="TaxonSet.dna" spec="TaxonSet">
-                <alignment idref="dna"/>
+                <alignment idref="dna0"/>
             </taxonset>
         </tree>
         <parameter id="birthRate.t:dna" spec="parameter.RealParameter" name="stateNode">$(birthRate)</parameter>
@@ -71,12 +71,6 @@ name="alignment" siteModel="@SiteModel.s:dna" tree="@Tree.t:dna" branchRateModel
 	$(freqParameter.1) $(freqParameter.2) $(freqParameter.3) $(freqParameter.4)
 	</parameter>
     </state>
-
-    <init id="RandomTree.t:dna" spec="beast.evolution.tree.RandomTree" estimate="false" initial="@Tree.t:dna" taxa="@dna">
-        <populationModel id="ConstantPopulation0.t:dna" spec="ConstantPopulation">
-            <parameter id="randomPopSize.t:dna" spec="parameter.RealParameter" name="popSize">1.0</parameter>
-        </populationModel>
-    </init>
 
     <distribution id="posterior" spec="util.CompoundDistribution">
         <distribution id="prior" spec="util.CompoundDistribution">
