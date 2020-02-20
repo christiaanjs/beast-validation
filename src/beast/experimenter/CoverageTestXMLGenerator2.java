@@ -25,7 +25,7 @@ public class CoverageTestXMLGenerator2 extends beast.core.Runnable {
 	final public Input<TreeFile> treeFileInput = new Input<>("treeFile",
 			"tree log file containing trees to generate sequence data on");
 	final public Input<File> geneTreeFileInput = new Input<>("geneTreeFile",
-			"configueation file with gene tree identifiers and log file names, one per line separated by a tab,"
+			"configuration file with gene tree identifiers and log file names, one per line separated by a tab,"
 			+ "for example \"gene1\t/xyz/abc/gene1.tree\ngene2\t/xyz/abc/gene2.tree\n");
 	final public Input<XMLFile> xmlFileInput = new Input<>("xmlFile",
 			"XML template file containing analysis to be merged with generated sequence data");

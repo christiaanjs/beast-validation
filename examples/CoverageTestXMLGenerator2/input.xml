@@ -28,7 +28,34 @@ name="alignment">
     <data
 id="dna"
 spec="beast.app.seqgen.SimulatedAlignment"
-name="alignment" siteModel="@SiteModel.s:dna" tree="@Tree.t:dna" branchRateModel="@RelaxedClock.c:dna" sequencelength="1000" data="@dna0"/>
+name="alignment" sequencelength="1000" data="@dna0">
+    <tree id="sim.Tree.t:dna" spec="beast.util.TreeParser" IsLabelledNewick='true'
+                newick='$(tree)'>
+        <taxonset spec="TaxonSet">
+            <alignment idref="dna0"/>
+        </taxonset>
+    </tree>
+    <siteModel id="sim.SiteModel.s:dna" spec="SiteModel">
+        <parameter id="sim.mutationRate.s:dna" spec="parameter.RealParameter" estimate="false" name="mutationRate">1.0</parameter>
+        <parameter id="sim.gammaShape.s:dna" spec="parameter.RealParameter" estimate="false" name="shape">1.0</parameter>
+        <parameter id="sim.proportionInvariant.s:dna" spec="parameter.RealParameter" estimate="false" lower="0.0" name="proportionInvariant" upper="1.0">0.0</parameter>
+        <substModel id="sim.hky.s:dna" spec="HKY" kappa="$(kappa)">
+             <frequencies id="sim.estimatedFreqs.s:dna" spec="Frequencies" frequencies="$(freqParameter.1) $(freqParameter.2) $(freqParameter.3) $(freqParameter.4)"/>
+        </substModel>
+    </siteModel>
+    <branchRateModel id="sim.RelaxedClock.c:dna" spec="beast.evolution.branchratemodel.UCRelaxedClockModel" numberOfDiscreteRates="100" 
+    	rateCategories="$(rateCategories.1) $(rateCategories.2) $(rateCategories.3) $(rateCategories.4) $(rateCategories.5) 
+	$(rateCategories.6) $(rateCategories.7) $(rateCategories.8) $(rateCategories.9) $(rateCategories.10) 
+	$(rateCategories.11) $(rateCategories.12) $(rateCategories.13) $(rateCategories.14) $(rateCategories.15) 
+	$(rateCategories.16) $(rateCategories.17) $(rateCategories.18) $(rateCategories.19) $(rateCategories.20) 
+	$(rateCategories.21) $(rateCategories.22) $(rateCategories.23) $(rateCategories.24) $(rateCategories.25) 
+	$(rateCategories.26) $(rateCategories.27) $(rateCategories.28) $(rateCategories.29) $(rateCategories.30)" tree="@sim.Tree.t:dna">
+        <LogNormal id="sim.LogNormalDistributionModel.c:dna" S="$(ucldStdev)" meanInRealSpace="true" name="distr">
+            <parameter id="sim.RealParameter.09" spec="parameter.RealParameter" estimate="false" lower="0.0" name="M" upper="1.0">1.0</parameter>
+        </LogNormal>
+        <parameter id="sim.ucldMean.c:dna" spec="parameter.RealParameter" estimate="false" name="clock.rate">1.0</parameter>
+    </branchRateModel>
+</data>
 
 
 
@@ -50,28 +77,24 @@ name="alignment" siteModel="@SiteModel.s:dna" tree="@Tree.t:dna" branchRateModel
 
 <run id="mcmc" spec="MCMC" chainLength="10000000">
     <state id="state" spec="State" storeEvery="100000">
-        <tree id="Tree.t:dna" spec="beast.util.TreeParser" name="stateNode" IsLabelledNewick='true'
-                newick='$(tree)'>
+        <tree id="Tree.t:dna" spec="beast.evolution.tree.Tree" name="stateNode">
             <taxonset id="TaxonSet.dna" spec="TaxonSet">
                 <alignment idref="dna0"/>
             </taxonset>
         </tree>
-        <parameter id="birthRate.t:dna" spec="parameter.RealParameter" name="stateNode">$(birthRate)</parameter>
-        <parameter id="ucldStdev.c:dna" spec="parameter.RealParameter" lower="0.0" name="stateNode">$(ucldStdev)</parameter>
-        <stateNode id="rateCategories.c:dna" spec="parameter.IntegerParameter" dimension="30">
-	$(rateCategories.1) $(rateCategories.2) $(rateCategories.3) $(rateCategories.4) $(rateCategories.5) 
-	$(rateCategories.6) $(rateCategories.7) $(rateCategories.8) $(rateCategories.9) $(rateCategories.10) 
-	$(rateCategories.11) $(rateCategories.12) $(rateCategories.13) $(rateCategories.14) $(rateCategories.15) 
-	$(rateCategories.16) $(rateCategories.17) $(rateCategories.18) $(rateCategories.19) $(rateCategories.20) 
-	$(rateCategories.21) $(rateCategories.22) $(rateCategories.23) $(rateCategories.24) $(rateCategories.25) 
-	$(rateCategories.26) $(rateCategories.27) $(rateCategories.28) $(rateCategories.29) $(rateCategories.30) 
-	</stateNode>
-        <parameter id="kappa.s:dna" spec="parameter.RealParameter" lower="0.0" name="stateNode">$(kappa)</parameter>
-        <parameter id="freqParameter.s:dna" spec="parameter.RealParameter" dimension="4" lower="0.0" name="stateNode" upper="1.0">
-	$(freqParameter.1) $(freqParameter.2) $(freqParameter.3) $(freqParameter.4)
-	</parameter>
+        <parameter id="birthRate.t:dna" spec="parameter.RealParameter" name="stateNode">1.0</parameter>
+        <parameter id="ucldStdev.c:dna" spec="parameter.RealParameter" lower="0.0" name="stateNode">0.3</parameter>
+        <stateNode id="rateCategories.c:dna" spec="parameter.IntegerParameter" dimension="30">1</stateNode>
+        <parameter id="kappa.s:dna" spec="parameter.RealParameter" lower="0.0" name="stateNode">1.0</parameter>
+        <parameter id="freqParameter.s:dna" spec="parameter.RealParameter" dimension="4" lower="0.0" name="stateNode" upper="1.0">0.25 0.25 0.25 0.25</parameter>
     </state>
 
+    <init id="RandomTree.t:dna" spec="beast.evolution.tree.RandomTree" estimate="false" initial="@Tree.t:dna" taxa="@dna">
+        <populationModel id="ConstantPopulation0.t:dna" spec="ConstantPopulation">
+            <parameter id="randomPopSize.t:dna" spec="parameter.RealParameter" name="popSize">1.0</parameter>
+        </populationModel>
+    </init>
+    
     <distribution id="posterior" spec="util.CompoundDistribution">
         <distribution id="prior" spec="util.CompoundDistribution">
             <distribution id="YuleModel.t:dna" spec="beast.evolution.speciation.YuleModel" birthDiffRate="@birthRate.t:dna" tree="@Tree.t:dna"/>
