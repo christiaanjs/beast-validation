@@ -20,4 +20,9 @@
               class="beast.experimenter.SBCAnalyser"
               args=""
             />
+
+<packageapp description="MCCTreeComparator"
+              class="beast.experimenter.MCCTreeComparator"
+              args=""
+            />
 </package>

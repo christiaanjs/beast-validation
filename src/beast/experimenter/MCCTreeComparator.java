@@ -2,6 +2,7 @@ package beast.experimenter;
 
 import java.io.File;
 import java.io.PrintStream;
+import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -46,6 +47,7 @@ public class MCCTreeComparator extends Runnable {
 			out = new PrintStream(str);
 		}
 		map = new LinkedHashMap<>();
+		map.put("posterior", new MatchCounter("posterior"));
 
 		if (toInput.get() < 0 || fromInput.get() < 0) {
 			process(src1Input.get(), src2Input.get());
@@ -71,11 +73,30 @@ public class MCCTreeComparator extends Runnable {
 	private void report() {
 		String [] keys = map.keySet().toArray(new String[]{});
 		Arrays.sort(keys);
+		out.println("metadata \tTotal matches\tMissers\tLeaf branch matches\tMissers\tInternal branch matches\tmissers"); 
 		for (String metadata : keys) {
 			MatchCounter m = map.get(metadata);
-			out.println(metadata + "\t" + m.matchCount + "\t" + m.missMatchCount );
+			out.println(metadata + "\t" + m.matchCount + "\t" + m.missMatchCount + 
+					"\t" + m.leafMatchCount + "\t" + m.leafMissMatchCount + 
+					"\t" + (m.matchCount-m.leafMatchCount) + "\t" + (m.missMatchCount - m.leafMissMatchCount) 
+					);
 		}
 		
+
+		out.println();
+		out.println("metadata \t% matches\t% leaf branch matches\t% internal branch matches"); 
+		DecimalFormat f = new DecimalFormat("#.##");
+		for (String metadata : keys) {
+			MatchCounter m = map.get(metadata);
+			double percentMatches =  100.0*(m.matchCount + 0.0) /(m.matchCount + m.missMatchCount);
+			double percentLBMatches = 100.0*(m.leafMatchCount + 0.0) /(m.leafMatchCount + m.leafMissMatchCount);
+			double percentIBMatches = 100.0*(m.matchCount-m.leafMatchCount + 0.0) /(m.matchCount-m.leafMatchCount + m.missMatchCount-m.leafMissMatchCount);
+			
+			out.println(metadata + "\t" +  f.format(percentMatches) + "\t" + 
+					(Double.isNaN(percentLBMatches) ? "N/A" : f.format(percentLBMatches)) + "\t" + 
+					f.format(percentIBMatches)); 
+		}
+
 	}
 
 	private void process(File tree1, File tree2) throws Exception {
@@ -110,22 +131,47 @@ public class MCCTreeComparator extends Runnable {
 		String trait;
 		int matchCount;
 		int missMatchCount;
+		int leafMatchCount;
+		int leafMissMatchCount;
 		
 		MatchCounter(String trait) {
 			this.trait = trait;
 			matchCount = 0;
 			missMatchCount = 0;
+			leafMatchCount = 0;
+			leafMissMatchCount = 0;
 		}
 	}
 	
 	
 	private void traverse(Node node, Node nodeMCC) {
 		node.setMetaData("height", node.getHeight());
+		
+		// deal with posterior
+		Object posterior = nodeMCC.getMetaData("posterior");
+		if (posterior != null) {
+			MatchCounter matchCounter = map.get("posterior");
+			Double value = (Double) posterior;
+			if (value >= 0.05) {
+				matchCounter.matchCount++;
+				if (node.isLeaf()) {
+					matchCounter.leafMatchCount++;
+				}
+			} else {
+				matchCounter.missMatchCount++;
+				if (node.isLeaf()) {
+					matchCounter.leafMissMatchCount++;
+				}
+			}
+		}
+		
+		// deal with other metadata
 		for (String metadata : node.getMetaDataNames()) {
 			if (!map.containsKey(metadata)) {
 				map.put(metadata, new MatchCounter(metadata));
 			}
 			MatchCounter matchCounter = map.get(metadata);
+			if (!metadata.equals("height") || !node.isLeaf()) {
 			Object o = node.getMetaData(metadata);
 			if (o instanceof Double) {
 				Object range = nodeMCC.getMetaData(metadata + "_95%_HPD");
@@ -134,8 +180,14 @@ public class MCCTreeComparator extends Runnable {
 					Double value = (Double) o;
 					if (value >= values[0] && value < values[1]) {
 						matchCounter.matchCount++;
+						if (node.isLeaf()) {
+							matchCounter.leafMatchCount++;
+						}
 					} else {
 						matchCounter.missMatchCount++;
+						if (node.isLeaf()) {
+							matchCounter.leafMissMatchCount++;
+						}
 					}
 				}
 			} else  if (o instanceof String) {
@@ -145,10 +197,17 @@ public class MCCTreeComparator extends Runnable {
 					Double [] probs = (Double []) nodeMCC.getMetaData(metadata + ".set.prob");
 					if (isInCredibleSet(values, probs, (String)o)) {
 						matchCounter.matchCount++;
+						if (node.isLeaf()) {
+							matchCounter.leafMatchCount++;
+						}
 					} else {
 						matchCounter.missMatchCount++;
+						if (node.isLeaf()) {
+							matchCounter.leafMissMatchCount++;
+						}
 					}
 				}
+			}
 			}
 		}
 		
