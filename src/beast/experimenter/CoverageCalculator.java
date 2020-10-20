@@ -82,6 +82,7 @@ public class CoverageCalculator extends Runnable {
 		int [] meanOver_ = new int[truth.getLabels().size()];
 		double [] meanESS_ = new double[truth.getLabels().size()];
 		double [] minESS_ = new double[truth.getLabels().size()];
+		boolean [] invalidESSReported_ = new boolean[truth.getLabels().size()];
 		
 		for (int i = 0; i < truth.getLabels().size(); i++) {
 			String label = truth.getLabels().get(i);
@@ -92,11 +93,13 @@ public class CoverageCalculator extends Runnable {
 				Double [] upps = estimated.getTrace(label+".95%HPDup");
 				Double [] ess = estimated.getTrace(label+".ESS");
 				if (lows == null || upps == null) {
-					Log.warning("Skipping " + label);
+					Log.warning("Skipping " + label + " due to lack of upper/lower bound data");
 				} else {
 					int covered = 0, meanOver = 0;
 					double minESS = Double.POSITIVE_INFINITY;
 					double meanESS = 0;
+					int ESScount = 0;
+					boolean invalidESSReported = false;
 					switch (getType(label)) {
 					case "b" :
 						// boolean trait, identified by labels starting with "has" or "use" or "is"
@@ -110,8 +113,16 @@ public class CoverageCalculator extends Runnable {
 									covered++;
 								}
 							}
-							minESS = Math.min(minESS, ess[j]);
-							meanESS += ess[j];
+							if (!Double.isNaN(ess[j])) {
+								minESS = Math.min(minESS, ess[j]);
+								meanESS += ess[j];
+								ESScount++;
+							} else {
+								if (!invalidESSReported) {
+									Log.warning("Invalid ESS estimate encountered for " + label);
+									invalidESSReported = true;
+								} 
+							}
 						}
 						break;
 					case "d":
@@ -125,18 +136,27 @@ public class CoverageCalculator extends Runnable {
 							if (trueValues[j + skip] > meanValues[j]) {
 								meanOver++;
 							}
-							minESS = Math.min(minESS, ess[j]);
-							meanESS += ess[j];
+							if (!Double.isNaN(ess[j])) {
+								minESS = Math.min(minESS, ess[j]);
+								meanESS += ess[j];
+								ESScount++;
+							} else {
+								if (!invalidESSReported) {
+									Log.warning("Invalid ESS estimate encountered for " + label);
+									invalidESSReported = true;
+								} 
+							}
 						}
 						break;
 					default:
 						throw new IllegalArgumentException("type should be b,c or d, not " + getType(label));
 					}
-					meanESS /= (trueValues.length - skip);
+					meanESS /= ESScount;
 					meanESS_[i] = meanESS;
 					minESS_[i] = minESS;
 					coverage[i] = covered;
 					meanOver_[i] = meanOver;
+					invalidESSReported_[i] = invalidESSReported;
 					Log.info(label + (label.length() < space.length() ? space.substring(label.length()) : " ") + 
 							formatter2.format(covered) + "\t   " + 
 							formatter.format(meanESS) + "  " + formatter.format(minESS));
@@ -292,7 +312,8 @@ public class CoverageCalculator extends Runnable {
 					html.println("<p>Coverage: " + coverage[i] + 
 							" Mean: "  + meanOver_[i] + 
 							" ESS (mean/min): " + formatter2.format(meanESS_[i]) + 
-							"/" + formatter2.format(minESS_[i]) + "</p><p>");
+							"/" + formatter2.format(minESS_[i]) + (invalidESSReported_[i] ? "*" : "")
+							+ "</p><p>");
 					html.println("<img width=\"350px\" src=\"" + label + ".svg\">");
 					html.println("</td>");
 					if ((k+1) % 4 == 0) {
@@ -305,7 +326,9 @@ public class CoverageCalculator extends Runnable {
     			}
 			}
 
-			html.println("</table>\n</body>\n</html>");
+			html.println("</table>\n" +
+					"</p><p>* marked ESSs indicate one or more ESS estimates are invalid. Unmarked ESSs indicate all estimates are valid.</p>"
+					+ "</body>\n</html>");
 			html.close();
 			
 			try {
