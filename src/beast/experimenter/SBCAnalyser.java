@@ -23,7 +23,7 @@ import beast.util.LogAnalyser;
 public class SBCAnalyser extends Runnable {
 	final public Input<File> logFileInput = new Input<>("log", "log file containing actual values", Validate.REQUIRED);
 	final public Input<Integer> skipLogLinesInput = new Input<>("skip", "numer of log file lines to skip", 1);
-	final public Input<File> logAnalyserFileInput = new Input<>("logAnalyser", "file produced by loganalyser tool using the -oneline option, containing estimated values", Validate.REQUIRED);
+	final public Input<File> logAnalyserFileInput = new Input<>("logAnalyser", "file produced by logcombiner, combining the trace log files associated with entries in the 'log' file", Validate.REQUIRED);
 	final public Input<Integer> binCountInput = new Input<>("bins", "number of bins to represent prior distribution. "
 			+ "If not specified (or not positive) use number of samples from posterior + 1 (L+1 in the paper)", -1);
 
