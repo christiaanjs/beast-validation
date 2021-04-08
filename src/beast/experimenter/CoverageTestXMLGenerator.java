@@ -101,8 +101,8 @@ public class CoverageTestXMLGenerator extends beast.core.Runnable {
 			mergewith.initByName("template", analysisXML, "output", dir + "/analysis-out" + i + ".xml");
 			SequenceSimulator sim = new beast.app.seqgen.SequenceSimulator();
 			sim.initByName("data", data, "tree", tree, "sequencelength", 2500, "outputFileName",
-					"gammaShapeSequence.xml", "siteModel", sitemodel, "branchRateModel", clockmodel, "merge",
-					mergewith);
+					"gammaShapeSequence.xml", "siteModel", sitemodel, "branchRateModel", clockmodel,
+					"merge", mergewith);
 			// produce gammaShapeSequence.xml and merge with analysis.xml to get
 			// analysis-out.xml
 			sim.run();
@@ -124,15 +124,33 @@ public class CoverageTestXMLGenerator extends beast.core.Runnable {
 		List<String> labels = trace.getLabels();
 		f = new Double[N][];
 		int fIndex = getIndex(labels, "freq");
-		f[0] = trace.getTrace(fIndex);
-		f[1] = trace.getTrace(fIndex + 1);
-		f[2] = trace.getTrace(fIndex + 2);
-		f[3] = trace.getTrace(fIndex + 3);
+		if (fIndex > 0) {
+			f[0] = trace.getTrace(fIndex);
+			f[1] = trace.getTrace(fIndex + 1);
+			f[2] = trace.getTrace(fIndex + 2);
+			f[3] = trace.getTrace(fIndex + 3);
+		} else {
+			f[0] = new Double[N];
+			f[1] = new Double[N];
+			f[2] = new Double[N];
+			f[3] = new Double[N];
+			for (int i = 0; i < N; i++) {
+				f[0][i] = 0.25;
+				f[1][i] = 0.25;
+				f[2][i] = 0.25;
+				f[3][i] = 0.25;
+			}
+		}
 
 		kappa = trace.getTrace(getIndex(labels, "kappa"));
 		shapes = null;
 		if (useGammaInput.get()) {
 			shapes = trace.getTrace(getIndex(labels, "shape"));
+		} else {
+			shapes = new Double[N];
+			for (int i  =0; i < N; i++) {
+				shapes[i] = 1.0;
+			}
 		}
 
 		Logger.FILE_MODE = beast.core.Logger.LogFileMode.overwrite;
