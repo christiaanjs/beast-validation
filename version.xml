@@ -7,8 +7,8 @@
               class="beast.experimenter.CoverageCalculator"
               args=""
             />
-<packageapp description="CoverageTestXMLGenerator"
-              class="beast.experimenter.CoverageTestXMLGenerator"
+<packageapp description="CoverageTestXMLGenerator2"
+              class="beast.experimenter.CoverageTestXMLGenerator2"
               args=""
             />
 <packageapp description="TraceKSStats"

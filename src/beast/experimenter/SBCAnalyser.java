@@ -278,28 +278,44 @@ public class SBCAnalyser extends Runnable {
 		PrintStream svg = new PrintStream(svgdir.getPath() +"/" + label + ".ECDF.svg");
 		svg.println("<svg class=\"chart\" width=\"1080\" height=\"780\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">");
 		
-		// axes
-		svg.println("<rect x='25' width=\"1000\" height=\"700\" style=\"fill:none;stroke-width:1;stroke:rgb(0,0,0)\"/>");
 		
 		// bars
 		double dx = 1000.0;
 		double dy = 740.0;
 		
 		StringBuilder bHi = new StringBuilder();
+		bHi.append("0,0 ");
 		StringBuilder bLo = new StringBuilder();
+		bLo.append("0,0 ");
 		StringBuilder cdf = new StringBuilder();
+		cdf.append("0,0 ");
 		for (int i = 0; i < binCount; i++) {
-			double x = (i+0.5)/binCount;
-			cdf.append(x + "," + (cumBins[i]/max) + " ");
+			double x = (i+0.0)/binCount;
 			bHi.append(x + "," + (binomHi[i]/max) + " ");
+			x = (i+1.0)/binCount;
 			bLo.append(x + "," + (binomLo[i]/max) + " ");
+//			cdf.append(x + "," + (i>0?(cumBins[i-1]/max):0) + " ");
+			cdf.append(x + "," + (cumBins[i]/max) + " ");
 		}
+		bLo.append("1,1");
+		bHi.append("1,1");
+		cdf.append("1,1 ");
 		
-		// permissable area
-		svg.println("<g transform=\"translate(30,700) scale("+dx+",-"+dy+")\">");
+		svg.println("<g transform=\"translate(30,700) scale("+dx+",-"+700+")\">");
+		// grid
+		svg.println("<rect x='0.2' y='0' width=\"0.2\" height=\"1\" style=\"fill:none;stroke-width:0.001;stroke:rgb(0,0,0);opacity: 0.5;\"/>");
+		svg.println("<rect x='0.6' y='0' width=\"0.2\" height=\"1\" style=\"fill:none;stroke-width:0.001;stroke:rgb(0,0,0);opacity: 0.5;\"/>");
+		svg.println("<rect x='0' y='0.2' width=\"1\" height=\"0.2\" style=\"fill:none;stroke-width:0.001;stroke:rgb(0,0,0);opacity: 0.5;\"/>");
+		svg.println("<rect x='0' y='0.6' width=\"1\" height=\"0.2\" style=\"fill:none;stroke-width:0.001;stroke:rgb(0,0,0);opacity: 0.5;\"/>");
+		svg.println("<rect x='0' y='0' width=\"1\" height=\"1\" style=\"fill:none;stroke-width:0.0025;stroke:rgb(0,0,0);opacity: 0.5;\"/>");
+		svg.println("  <polyline points=\"0,0 1,1\" style=\"fill:none;stroke-width:0.005;stroke:rgb(0,0,0);opacity: 0.5;\"/>");
+
+		
+		// ECDF graph + bounds
 		svg.println("  <polyline points=\"" + bHi.toString() + "\" style=\"fill:none;stroke-width:0.01;stroke:rgb(0,0,200);opacity: 0.5;\"/>");
 		svg.println("  <polyline points=\"" + bLo.toString() + "\" style=\"fill:none;stroke-width:0.01;stroke:rgb(0,0,200);opacity: 0.5;\"/>");
 		svg.println("  <polyline points=\"" + cdf.toString() + "\" style=\"fill:none;stroke-width:0.01;stroke:rgb(0,0,0);opacity: 1.0;\"/>");
+
 
 		svg.println("</g>");
 		svg.println("<text style='font-size:20pt' x='0' y='20'>1.0</text>");
