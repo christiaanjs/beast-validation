@@ -35,6 +35,8 @@ public class CoverageTestXMLGenerator extends beast.core.Runnable {
 	final public Input<Integer> skipLogLinesInput = new Input<>("skip", "numer of log file lines to skip", 1);
 	final public Input<Integer> burnInPercentageInput = new Input<>("burnin",
 			"percentage of trees to used as burn-in (and will be ignored)", 1);
+	final public Input<Integer> siteCountInput = new Input<>("siteCount",
+			"number of site to be generted in alignment", 1000);
 	final public Input<Boolean> useGammaInput = new Input<>("useGamma", "use gamma rate heterogeneity", true);
 
 	int N = 100;
@@ -100,7 +102,7 @@ public class CoverageTestXMLGenerator extends beast.core.Runnable {
 			MergeDataWith mergewith = new beast.app.seqgen.MergeDataWith();
 			mergewith.initByName("template", analysisXML, "output", dir + "/analysis-out" + i + ".xml");
 			SequenceSimulator sim = new beast.app.seqgen.SequenceSimulator();
-			sim.initByName("data", data, "tree", tree, "sequencelength", 2500, "outputFileName",
+			sim.initByName("data", data, "tree", tree, "sequencelength", siteCountInput.get(), "outputFileName",
 					"gammaShapeSequence.xml", "siteModel", sitemodel, "branchRateModel", clockmodel,
 					"merge", mergewith);
 			// produce gammaShapeSequence.xml and merge with analysis.xml to get
@@ -145,7 +147,7 @@ public class CoverageTestXMLGenerator extends beast.core.Runnable {
 		kappa = trace.getTrace(getIndex(labels, "kappa"));
 		shapes = null;
 		if (useGammaInput.get()) {
-			shapes = trace.getTrace(getIndex(labels, "shape"));
+			shapes = trace.getTrace(getIndex(labels, "gammaShape"));
 		} else {
 			shapes = new Double[N];
 			for (int i  =0; i < N; i++) {

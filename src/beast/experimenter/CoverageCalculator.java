@@ -96,7 +96,8 @@ public class CoverageCalculator extends Runnable {
         	for (int i = 0; i < truth.getLabels().size(); i++) {
     			String label = truth.getLabels().get(i);
     			try {
-    				if (!(label.equals("prior") || label.equals("likelihood") || label.equals("posterior"))) {
+    				if (!(label.equals("prior") || label.equals("likelihood") || label.equals("posterior") ||
+    						Double.isNaN(truth.getTrace(i+1)[0]))) {
     					output(i, k, label, truth, estimated, svgdir, skip, html,
     							coverage, meanOver_, meanESS_, minESS_, invalidESSReported_);
     					k++;

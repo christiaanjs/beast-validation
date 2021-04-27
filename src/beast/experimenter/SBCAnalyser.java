@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Arrays;
 
+import org.apache.commons.math.MathException;
 import org.apache.commons.math.distribution.BinomialDistribution;
 import org.apache.commons.math.distribution.BinomialDistributionImpl;
 
@@ -56,6 +57,7 @@ public class SBCAnalyser extends Runnable {
 			html.println("<li>prior sample: " + logFileInput.get().getPath()+"</li>");
 			html.println("<li>posterior samples: " + logAnalyserFileInput.get().getPath()+"</li>");
 			html.println("<li>Use "+ (useRankedBinsInput.get() ? "ranking" : "empirical bins") + " for bins</li>");
+			html.println("<table>");
 		}
 		
 
@@ -88,149 +90,26 @@ public class SBCAnalyser extends Runnable {
 		}
 		Log.info(CoverageCalculator.space + "\tmissed\t" + b.toString());
 		
+		int k = 0;
+		StringBuilder html2 = new StringBuilder();
+		html2.append("<table>\n");
 		for (int i = 0; i < truth.getLabels().size(); i++) {
 			String label = truth.getLabels().get(i);
-			Double [] trueValues = truth.getTrace(label);
-						
-			Double [] estimates = estimated.getTrace(label);
-			if (estimates == null) {
-				Log.warning("Skipping " + label);
-			} else {
-				if (skip > 0) {
-					Double [] tmp = new Double[trueValues.length - skip];
-					System.arraycopy(trueValues, skip, tmp, 0, tmp.length);
-					trueValues = tmp;
-				}
-
-				int  [] bins = new int[binCount];
-				
-//				double [] binBoundaries = new double[binCount - 1];
-//				for (int k = 0; k < binCount-1; k++) {
-//					int j = (int) (trueValues.length * (k+1.0)/binCount);
-//					binBoundaries[k] = (trueValues[j] + trueValues[j+1]) / 2.0;
-//				}
-
-				boolean empiricalBins = useRankedBinsInput.get();
-
-				// int L = estimates.length / trueValues.length;
-				for (int j = 0; j < trueValues.length; j++) {
-					double [] estimatesX = new double[L];
-					for (int k = 0; k < L; k++) {
-						estimatesX[k] = estimates[j * L + k];
-					}
-					Arrays.sort(estimatesX);
-					
-					if (empiricalBins) {
-						double [] binBoundaries = new double[binCount - 1];
-						if (empiricalBins) {
-							if (binCountInput.get() <= 0) {
-								binBoundaries = estimatesX;
-							} else { 
-								for (int k = 0; k < binCount-1; k++) {
-									int m = (int) (estimatesX.length * (k+1.0)/binCount);
-									binBoundaries[k] = (estimatesX[m] + estimatesX[m+1]) / 2.0;
-								}
-							}
-						}
-
-						int bin = Arrays.binarySearch(binBoundaries, trueValues[j]);
-						if (bin < 0) {
-							bin = -bin-1;
-						}
-						bins[bin]++;
-					} else {
-						int rank = Arrays.binarySearch(estimatesX, trueValues[j]);
-						if (rank < 0) {
-							rank = 1-rank;
-						}
-						int bin = rank * binCount / L;
-						if (bin == bins.length) {
-							bin--;
-						}
-						bins[bin]++;
-					}
-					
-				}
-
-				
-				b = new StringBuilder();
-				int missed = 0;
-				for (int j = 0; j < binCount; j++) {
-					b.append(bins[j] + "\t");
-					if (pLow > bins[j] || pUp < bins[j]) {
-						missed++;
-					}
-				}
-				
-				Log.info(label + (label.length() < CoverageCalculator.space.length() ? CoverageCalculator.space.substring(label.length()) : "") + "\t" + 
-						missed + "\t" + 
-						b.toString());
-
-				if (html != null) {
-					int max = pUp;
-					for (int d : bins) {
-						max = Math.max(d,  max);
-					}
-					if (max < 100) {
-						max = max + 9 - (max+9) % 10;
-					} else if (max < 250) {
-						max = max + 49 - (max+49) % 50;
-					} else {
-						max = max + 99 - (max+99) % 100;
-					}
-					
-					PrintStream svg = new PrintStream(svgdir.getPath() +"/" + label + ".svg");
-					svg.println("<svg class=\"chart\" width=\"1040\" height=\"760\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">");
-					
-					// axes
-					svg.println("<rect x='15' width=\"1000\" height=\"700\" style=\"fill:none;stroke-width:1;stroke:rgb(0,0,0)\"/>");
-					
-					// bars
-					double dx = 1000.0 / binCount;
-					double dy = 740.0 / max;
-					// permissable area
-					svg.println("<g transform=\"translate(20,700) scale("+dx+",-"+dy+")\">");
-					svg.println("  <polygon points=\"0,"+pExp+" "+binCount+","+pExp+" "+(binCount+1)+","+pUp+" -1,"+pUp+"\" style=\"fill:#eee;stroke-width:0;stroke:rgb(0,0,0);opacity: 0.5;\"/>");
-					svg.println("  <polygon points=\"0,"+pExp+" "+binCount+","+pExp+" "+(binCount+1)+","+pLow+" -1,"+pLow+"\" style=\"fill:#eee;stroke-width:0;stroke:rgb(0,0,0);opacity: 0.5;\"/>");
-					svg.println("  <polygon points=\"0,"+pExp+" "+binCount+","+pExp+" "+(binCount+1)+","+pUp95+" -1,"+pUp95+"\" style=\"fill:#ccc;stroke-width:0;stroke:rgb(0,0,0);opacity: 0.5;\"/>");
-					svg.println("  <polygon points=\"0,"+pExp+" "+binCount+","+pExp+" "+(binCount+1)+","+pLow95+" -1,"+pLow95+"\" style=\"fill:#ccc;stroke-width:0;stroke:rgb(0,0,0);opacity: 0.5;\"/>");
-
-					
-					for (int j = 0; j < binCount; j++) {
-						svg.println("  <rect x=\""+j+"\" y=\"0\" width=\"0.95\" height=\""+bins[j]+"\" style=\"fill:#9a5753;stroke-width:0.05;stroke:#8b3d37\"/>");
-						if (j % 10 == 0) {
-						// ticks
-						//	svg.println("<line y1='0' y2='-1' x1='" + (j+0.45) + "' x2='" + (j+0.45) + "' style='stroke-width:0.1;stroke:rgb(0,0,0)'/>");
-						}
-					}
-					svg.println("</g>");
-					svg.println("<text x='0' y='10'>" + max + "</text>");
-					svg.println("<text x='0' y='700'>0</text>");
-					svg.println("<text x='"+(10+500/binCount)+"' y='720'>" + 1 + "</text>");
-					for (int j = 10; j <= binCount; j+=10) {
-						int x = 10 + j*1000/binCount - 500/binCount;
-						int y = 720;
-						svg.println("<text x='"+x+"' y='"+y+"'>" + j + "</text>");
-					}
-					svg.println("<text x='1020' y='"+(705-dy * pUp)+"'>" + pUp + "</text>");
-					svg.println("<text x='1020' y='"+(705-dy * pUp95)+"'>" + pUp95 + "</text>");
-					svg.println("<text x='1020' y='"+(705-dy * pExp)+"'>" + pExp + "</text>");
-					svg.println("<text x='1020' y='"+(705-dy * pLow95)+"'>" + pLow95 + "</text>");
-					svg.println("<text x='1020' y='"+(705-dy * pLow)+"'>" + pLow + "</text>");
-
-					svg.println("</svg>");
-					svg.close();
-					
-					html.println("<h3>" + label + "</h3>");
-					html.println("<p>Missed: " + missed + "</p><p>");
-					html.println("<img src=\"" + label + ".svg\">");
-				}
-			}
+			if (!(label.equals("prior") || label.equals("likelihood") || label.equals("posterior") ||
+					Double.isNaN(truth.getTrace(i+1)[0]))) {
+				output(i, k, label, truth, estimated, svgdir, skip, html, html2,
+						binCount, L, pLow, pUp, pLow95, pUp95, pExp);
+				k++;
+			}						
 		}
+		html2.append("</table>\n");
 		//Log.info("Expected number of misses: " + 0.05 * binom.getNumberOfTrials());
 		
 		if (html != null) {
 			//html.println("Expected number of misses: " + 0.05 * binom.getNumberOfTrials());
+			html.println("</table>");
+			html.println();
+			html.println(html2.toString());
 			html.println("</body>\n</html>");
 			html.close();
 			
@@ -243,6 +122,242 @@ public class SBCAnalyser extends Runnable {
 		}
 
 		Log.warning("Done!");	
+	}
+
+	private void output(int i, int k2, String label, LogAnalyser truth, LogAnalyser estimated, File svgdir, int skip,
+			PrintStream html, StringBuilder html2, int binCount, int L, int pLow, int pUp, int pLow95, int pUp95, int pExp) 
+					throws IOException, MathException {
+		Double [] trueValues = truth.getTrace(label);
+		Double [] estimates = estimated.getTrace(label);
+		if (estimates == null) {
+			Log.warning("Skipping " + label);
+		} else {
+			if (skip > 0) {
+				Double [] tmp = new Double[trueValues.length - skip];
+				System.arraycopy(trueValues, skip, tmp, 0, tmp.length);
+				trueValues = tmp;
+			}
+
+			int  [] bins = new int[binCount];
+			
+//			double [] binBoundaries = new double[binCount - 1];
+//			for (int k = 0; k < binCount-1; k++) {
+//				int j = (int) (trueValues.length * (k+1.0)/binCount);
+//				binBoundaries[k] = (trueValues[j] + trueValues[j+1]) / 2.0;
+//			}
+
+			boolean empiricalBins = useRankedBinsInput.get();
+
+			// int L = estimates.length / trueValues.length;
+			for (int j = 0; j < trueValues.length; j++) {
+				double [] estimatesX = new double[L];
+				for (int k = 0; k < L; k++) {
+					estimatesX[k] = estimates[j * L + k];
+				}
+				Arrays.sort(estimatesX);
+				
+				if (empiricalBins) {
+					double [] binBoundaries = new double[binCount - 1];
+					if (empiricalBins) {
+						if (binCountInput.get() <= 0) {
+							binBoundaries = estimatesX;
+						} else { 
+							for (int k = 0; k < binCount-1; k++) {
+								int m = (int) (estimatesX.length * (k+1.0)/binCount);
+								binBoundaries[k] = (estimatesX[m] + estimatesX[m+1]) / 2.0;
+							}
+						}
+					}
+
+					int bin = Arrays.binarySearch(binBoundaries, trueValues[j]);
+					if (bin < 0) {
+						bin = -bin-1;
+					}
+					bins[bin]++;
+				} else {
+					int rank = Arrays.binarySearch(estimatesX, trueValues[j]);
+					if (rank < 0) {
+						rank = 1-rank;
+					}
+					int bin = rank * binCount / L;
+					if (bin == bins.length) {
+						bin--;
+					}
+					bins[bin]++;
+				}
+				
+			}
+
+			
+			StringBuilder b = new StringBuilder();
+			int missed = 0;
+			for (int j = 0; j < binCount; j++) {
+				b.append(bins[j] + "\t");
+				if (pLow > bins[j] || pUp < bins[j]) {
+					missed++;
+				}
+			}
+			
+			int n = bins.length;
+			double [] binomHi = new double[n];
+			double [] binomLo = new double[n];
+			int [] cumBins = new int[n];
+			
+			for (int j = 0; j < n; j++) {
+				cumBins[j] = bins[j] + (j>0?cumBins[j-1]:0);
+			}
+			for (int j = 0; j < n; j++) {
+				BinomialDistribution binom = new BinomialDistributionImpl(cumBins[n-1], (j+0.5) / n);
+				binomLo[j] = binom.inverseCumulativeProbability(0.025);
+				binomHi[j] = binom.inverseCumulativeProbability(0.975);
+			}
+			
+			
+			Log.info(label + (label.length() < CoverageCalculator.space.length() ? CoverageCalculator.space.substring(label.length()) : "") + "\t" + 
+					missed + "\t" + 
+					b.toString());
+
+			if (html != null) {
+				outputHTML(k2, label, svgdir, skip, html, html2, binCount, L, pLow, pUp, pLow95, pUp95, pExp, bins, missed,
+						cumBins, binomLo, binomHi 
+						);
+			}
+		}		
+	}
+
+	private void outputHTML(int k2, String label, File svgdir, int skip,
+			PrintStream html, 
+			StringBuilder html2, int binCount, int L, int pLow, int pUp, int pLow95, int pUp95, int pExp, int [] bins, int missed,
+			int [] cumBins, double [] binomLo, double [] binomHi
+			) throws IOException {
+		int max = pUp;
+		for (int d : bins) {
+			max = Math.max(d,  max);
+		}
+		if (max < 100) {
+			max = max + 9 - (max+9) % 10;
+		} else if (max < 250) {
+			max = max + 49 - (max+49) % 50;
+		} else {
+			max = max + 99 - (max+99) % 100;
+		}
+		
+		outputSVGGraph(label, svgdir, binCount, pLow, pUp, pLow95, pUp95, pExp, bins, max);
+		
+		outputECDFGraph(label, svgdir, binCount, cumBins, binomLo, binomHi);
+		
+		
+		
+		
+		if (k2 % 4 == 0) {
+			html.println("<tr>");
+			html2.append("<tr>\n");
+		}
+		html.println("<td>");
+		html.println("<h3>" + label + "</h3>");
+		html.println("<p>Missed: " + missed + "</p><p>");
+		html.println("<img width=\"350px\" src=\"" + label + ".svg\">");
+		html.println("</td>");
+
+		html2.append("<td>");
+		html2.append("<h3>" + label + "</h3>");
+		html2.append("<p>Missed: " + missed + "</p><p>");
+		html2.append("<img width=\"350px\" src=\"" + label + ".ECDF.svg\">");
+		html2.append("</td>");
+		
+		if ((k2+1) % 4 == 0) {
+			html.println("</tr>");
+			html2.append("</tr>\n");
+		}
+	}
+
+	private void outputECDFGraph(String label, File svgdir, int binCount, int[] cumBins, double[] binomLo,
+			double[] binomHi) throws IOException {
+		double max = cumBins[cumBins.length - 1];
+		
+		PrintStream svg = new PrintStream(svgdir.getPath() +"/" + label + ".ECDF.svg");
+		svg.println("<svg class=\"chart\" width=\"1080\" height=\"780\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">");
+		
+		// axes
+		svg.println("<rect x='25' width=\"1000\" height=\"700\" style=\"fill:none;stroke-width:1;stroke:rgb(0,0,0)\"/>");
+		
+		// bars
+		double dx = 1000.0;
+		double dy = 740.0;
+		
+		StringBuilder bHi = new StringBuilder();
+		StringBuilder bLo = new StringBuilder();
+		StringBuilder cdf = new StringBuilder();
+		for (int i = 0; i < binCount; i++) {
+			double x = (i+0.5)/binCount;
+			cdf.append(x + "," + (cumBins[i]/max) + " ");
+			bHi.append(x + "," + (binomHi[i]/max) + " ");
+			bLo.append(x + "," + (binomLo[i]/max) + " ");
+		}
+		
+		// permissable area
+		svg.println("<g transform=\"translate(30,700) scale("+dx+",-"+dy+")\">");
+		svg.println("  <polyline points=\"" + bHi.toString() + "\" style=\"fill:none;stroke-width:0.01;stroke:rgb(0,0,200);opacity: 0.5;\"/>");
+		svg.println("  <polyline points=\"" + bLo.toString() + "\" style=\"fill:none;stroke-width:0.01;stroke:rgb(0,0,200);opacity: 0.5;\"/>");
+		svg.println("  <polyline points=\"" + cdf.toString() + "\" style=\"fill:none;stroke-width:0.01;stroke:rgb(0,0,0);opacity: 1.0;\"/>");
+
+		svg.println("</g>");
+		svg.println("<text style='font-size:20pt' x='0' y='20'>1.0</text>");
+		svg.println("<text style='font-size:20pt' x='0' y='710'>0</text>");
+		svg.println("<text style='font-size:20pt' x='"+(10+500/binCount)+"' y='720'>" + 1 + "</text>");
+		for (int j = 10; j <= binCount; j+=10) {
+			int x = 10 + j*1000/binCount - 500/binCount;
+			int y = 720;
+			svg.println("<text style='font-size:20pt' x='"+x+"' y='"+y+"'>" + Math.round((j+0.0)/binCount) + "</text>");
+		}
+		svg.println("</svg>");
+		svg.close();	
+		
+	}
+
+	private void outputSVGGraph(String label, File svgdir, 
+			int binCount, int pLow, int pUp, int pLow95, int pUp95, int pExp, int [] bins, int max) throws IOException{
+		PrintStream svg = new PrintStream(svgdir.getPath() +"/" + label + ".svg");
+		svg.println("<svg class=\"chart\" width=\"1080\" height=\"780\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">");
+		
+		// axes
+		svg.println("<rect x='25' width=\"1000\" height=\"700\" style=\"fill:none;stroke-width:1;stroke:rgb(0,0,0)\"/>");
+		
+		// bars
+		double dx = 1000.0 / binCount;
+		double dy = 740.0 / max;
+		// permissable area
+		svg.println("<g transform=\"translate(30,700) scale("+dx+",-"+dy+")\">");
+		svg.println("  <polygon points=\"0,"+pExp+" "+binCount+","+pExp+" "+(binCount+1)+","+pUp+" -1,"+pUp+"\" style=\"fill:#eee;stroke-width:0;stroke:rgb(0,0,0);opacity: 0.5;\"/>");
+		svg.println("  <polygon points=\"0,"+pExp+" "+binCount+","+pExp+" "+(binCount+1)+","+pLow+" -1,"+pLow+"\" style=\"fill:#eee;stroke-width:0;stroke:rgb(0,0,0);opacity: 0.5;\"/>");
+		svg.println("  <polygon points=\"0,"+pExp+" "+binCount+","+pExp+" "+(binCount+1)+","+pUp95+" -1,"+pUp95+"\" style=\"fill:#ccc;stroke-width:0;stroke:rgb(0,0,0);opacity: 0.5;\"/>");
+		svg.println("  <polygon points=\"0,"+pExp+" "+binCount+","+pExp+" "+(binCount+1)+","+pLow95+" -1,"+pLow95+"\" style=\"fill:#ccc;stroke-width:0;stroke:rgb(0,0,0);opacity: 0.5;\"/>");
+
+		
+		for (int j = 0; j < binCount; j++) {
+			svg.println("  <rect x=\""+j+"\" y=\"0\" width=\"0.95\" height=\""+bins[j]+"\" style=\"fill:#00afd7;stroke-width:0.05;stroke:#3d37db\"/>");
+			if (j % 10 == 0) {
+			// ticks
+			//	svg.println("<line y1='0' y2='-1' x1='" + (j+0.45) + "' x2='" + (j+0.45) + "' style='stroke-width:0.1;stroke:rgb(0,0,0)'/>");
+			}
+		}
+		svg.println("</g>");
+		svg.println("<text style='font-size:20pt' x='0' y='20'>" + max + "</text>");
+		svg.println("<text style='font-size:20pt' x='0' y='710'>0</text>");
+		svg.println("<text style='font-size:20pt' x='"+(10+500/binCount)+"' y='720'>" + 1 + "</text>");
+		for (int j = 10; j <= binCount; j+=10) {
+			int x = 10 + j*1000/binCount - 500/binCount;
+			int y = 720;
+			svg.println("<text style='font-size:20pt' x='"+x+"' y='"+y+"'>" + j + "</text>");
+		}
+		svg.println("<text style='font-size:20pt' x='1030' y='"+(705-dy * pUp)+"'>" + pUp + "</text>");
+		svg.println("<text style='font-size:20pt' x='1030' y='"+(705-dy * pUp95)+"'>" + pUp95 + "</text>");
+		svg.println("<text style='font-size:20pt' x='1030' y='"+(705-dy * pExp)+"'>" + pExp + "</text>");
+		svg.println("<text style='font-size:20pt' x='1030' y='"+(705-dy * pLow95)+"'>" + pLow95 + "</text>");
+		svg.println("<text style='font-size:20pt' x='1030' y='"+(705-dy * pLow)+"'>" + pLow + "</text>");
+
+		svg.println("</svg>");
+		svg.close();	
 	}
 
 	public static void main(String[] args) throws Exception {
