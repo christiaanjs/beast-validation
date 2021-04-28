@@ -267,6 +267,7 @@ public class CoverageCalculator extends Runnable {
         	Log.warning("Guessing file order -- if this fails missarably, try setting guessFileOrder to false");
 	        BufferedReader fin = new BufferedReader(new FileReader(logAnalyserFileInput.get().getAbsolutePath()));
 	        fin.readLine();
+	        int max = 0;
 			for (int i = 0; i < map.length; i++) {
 	            String [] str = fin.readLine().split("\t");
 	            String name = str[1];
@@ -278,11 +279,12 @@ public class CoverageCalculator extends Runnable {
 	            	j--;
 	            }
 	            map[i] = Integer.parseInt(name.substring(j+1));
+	            max = Math.max(map[i], max);
 	        }
 	        fin.close();
 	        
 	        // check for duplicates
-	        boolean [] done = new boolean[map.length];
+	        boolean [] done = new boolean[max+1];
 	        for (int d : map) {
 	        	if (done[d]) {
 	        		Log.warning("Duplicate file number found -- aborting file order guessing and assume log and logAnalyser file are in same order");
