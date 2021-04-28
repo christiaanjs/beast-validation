@@ -1,7 +1,9 @@
 package beast.experimenter;
 
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.text.DecimalFormat;
@@ -34,7 +36,10 @@ public class CoverageCalculator extends Runnable {
 			+ "hasGamma\tb\n"
 			+ "modelIndicator\tc\n"
 			+ "Items that are not specified are considered to be of type double");
-
+	final public Input<Boolean> guessFileOrderInput = new Input<>("guessFileOrder", "guess order of entries in logAnalyser file based on file name, otherwise assume order is the same as in log-file with actual values", true);
+	final public Input<Boolean> showESSInput = new Input<>("showESS", "show information about ESSs", true);
+			
+	
 	final static String space = "                                                ";
 	NumberFormat formatter = new DecimalFormat("#0.00");
 	NumberFormat formatter2 = new DecimalFormat("#0");
@@ -87,7 +92,9 @@ public class CoverageCalculator extends Runnable {
 		double [] minESS_ = new double[truth.getLabels().size()];
 		boolean [] invalidESSReported_ = new boolean[truth.getLabels().size()];
 		
-		calcStats(truth, estimated, skip, coverage, meanOver_, meanESS_, minESS_, invalidESSReported_);
+		int [] map = guessFileOrder(estimated, skip);
+
+		calcStats(truth, estimated, coverage, meanOver_, meanESS_, minESS_, invalidESSReported_, map);
 
 
 		if (outputInput.get() != null) {
@@ -98,8 +105,9 @@ public class CoverageCalculator extends Runnable {
     			try {
     				if (!(label.equals("prior") || label.equals("likelihood") || label.equals("posterior") ||
     						Double.isNaN(truth.getTrace(i+1)[0]))) {
-    					output(i, k, label, truth, estimated, svgdir, skip, html,
-    							coverage, meanOver_, meanESS_, minESS_, invalidESSReported_);
+    					output(i, k, label, truth, estimated, svgdir, html,
+    							coverage, meanOver_, meanESS_, minESS_, invalidESSReported_,
+    							map);
     					k++;
         			}
     			} catch (ArrayIndexOutOfBoundsException e) {
@@ -109,7 +117,8 @@ public class CoverageCalculator extends Runnable {
 			}
 
 			html.println("</table>\n" +
-					"</p><p>* marked ESSs indicate one or more ESS estimates are invalid. Unmarked ESSs indicate all estimates are valid.</p>"
+					(showESSInput.get()?
+					"</p><p>* marked ESSs indicate one or more ESS estimates are invalid. Unmarked ESSs indicate all estimates are valid.</p>":"")
 					+ "</body>\n</html>");
 			html.close();
 			
@@ -161,8 +170,10 @@ public class CoverageCalculator extends Runnable {
 		return hpd;
 	}
 
-	private void calcStats(LogAnalyser truth, LogAnalyser estimated, int skip,
-			int[] coverage, int[] meanOver_, double[] meanESS_, double[] minESS_, boolean[] invalidESSReported_) {
+	private void calcStats(LogAnalyser truth, LogAnalyser estimated,
+			int[] coverage, int[] meanOver_, double[] meanESS_, double[] minESS_, boolean[] invalidESSReported_,
+			int [] map) throws IOException {
+		
 		for (int i = 0; i < truth.getLabels().size(); i++) {
 			String label = truth.getLabels().get(i);
 			try {
@@ -182,8 +193,8 @@ public class CoverageCalculator extends Runnable {
 					switch (getType(label)) {
 					case "b" :
 						// boolean trait, identified by labels starting with "has" or "use" or "is"
-						for (int j = 0; j < trueValues.length - skip && j < meanValues.length; j++) {
-							if (trueValues[j + skip] == 0) {
+						for (int j = 0; j < meanValues.length && map[j] < trueValues.length; j++) {
+							if (trueValues[map[j]] == 0) {
 								if (meanValues[j] < 0.95) {
 									covered++;
 								}
@@ -207,12 +218,12 @@ public class CoverageCalculator extends Runnable {
 					case "d":
 					case "c":
 						// real valued trait
-						for (int j = 0; j < trueValues.length - skip && j < meanValues.length; j++) {
-							if (lows[j] <= trueValues[j + skip] && trueValues[j + skip] <= upps[j]) {
+						for (int j = 0; j < meanValues.length && map[j] < trueValues.length; j++) {
+							if (lows[j] <= trueValues[map[j]] && trueValues[map[j]] <= upps[j]) {
 								covered++;
 								// System.out.println(lows[j] +"<=" + trueValues[j + skip] +"&&" + trueValues[j + skip] +" <=" + upps[j]);
 							}
-							if (trueValues[j + skip] > meanValues[j]) {
+							if (trueValues[map[j]] > meanValues[j]) {
 								meanOver++;
 							}
 							if (!Double.isNaN(ess[j])) {
@@ -247,12 +258,74 @@ public class CoverageCalculator extends Runnable {
 		}
 	}
 
-	private int output(int i, int k, String label, LogAnalyser truth, LogAnalyser estimated, File svgdir, int skip, PrintStream html,
+	/** maps file names to entries in true-values based on numbering in file name **/
+	private int[] guessFileOrder(LogAnalyser estimated, int skip) throws IOException {
+		int [] map = new int[estimated.getTrace(0).length];
+		
+		if (guessFileOrderInput.get() && estimated.getLabels().get(0).equals("filename")) {
+			
+        	Log.warning("Guessing file order -- if this fails missarably, try setting guessFileOrder to false");
+	        BufferedReader fin = new BufferedReader(new FileReader(logAnalyserFileInput.get().getAbsolutePath()));
+	        fin.readLine();
+			for (int i = 0; i < map.length; i++) {
+	            String [] str = fin.readLine().split("\t");
+	            String name = str[1];
+	            if (name.lastIndexOf(".") > 0) {
+	            	name = name.substring(0, name.lastIndexOf("."));
+	            }
+	            int j = name.length()-1;
+	            while (j >= 0 && Character.isDigit(name.charAt(j))) {
+	            	j--;
+	            }
+	            map[i] = Integer.parseInt(name.substring(j+1));
+	        }
+	        fin.close();
+	        
+	        // check for duplicates
+	        boolean [] done = new boolean[map.length];
+	        for (int d : map) {
+	        	if (done[d]) {
+	        		Log.warning("Duplicate file number found -- aborting file order guessing and assume log and logAnalyser file are in same order");
+	    			for (int i = 0; i < map.length; i++) {
+	    				map[i] = i +  skip;
+	    			}
+	    			return map;
+	        	}
+	        }
+	        // try to establish whether started at 0 or 1
+	        boolean hasZero = false;
+	        for (int d : map) {
+	        	if (d == 0) {
+	        		hasZero = true;
+	        		break;
+	        	}
+	        }
+	        if (!hasZero) {
+	        	Log.warning("Assume first file starts at number 1");
+				for (int i = 0; i < map.length; i++) {
+					map[i]--;
+				}
+	        }
+
+	        // adjust for skip
+			for (int i = 0; i < map.length; i++) {
+				map[i] +=  skip;
+			}
+		} else {
+			for (int i = 0; i < map.length; i++) {
+				map[i] = i +  skip;
+			}
+		}
+		return map;
+	}
+
+	private int output(int i, int k, String label, LogAnalyser truth, LogAnalyser estimated, File svgdir, PrintStream html,
 			int [] coverage,
 			int [] meanOver_,
 			double [] meanESS_,
 			double [] minESS_,
-			boolean [] invalidESSReported_
+			boolean [] invalidESSReported_,
+			int [] map
 			) throws IOException {
 		Double [] trueValues = truth.getTrace(label);
 		Double [] estimates = estimated.getTrace(label+".mean");
@@ -266,8 +339,8 @@ public class CoverageCalculator extends Runnable {
 		Log.warning("Writing to file " + svgdir.getPath()+"/" + label + ".tsv");
 		PrintStream tsv = new PrintStream(svgdir.getPath() +"/" + label + ".tsv");
 		tsv.println("truth\testimates\t95HPDlow\t95HPDup");
-		for (int j = 0; j < estimates.length - skip; j++) {
-			tsv.println(trueValues[j + skip] + "\t" + estimates[j] + "\t" + lows[j] + "\t" + upps[j]);
+		for (int j = 0; j < estimates.length; j++) {
+			tsv.println(trueValues[map[j]] + "\t" + estimates[j] + "\t" + lows[j] + "\t" + upps[j]);
 		}
 		tsv.close();
 	
@@ -290,13 +363,13 @@ public class CoverageCalculator extends Runnable {
 
 		double min = estimates[0];
 		double max = estimates[0];
-		double minx = trueValues[skip];
-		double maxx = trueValues[skip];
-		for (int j = 0; j < estimates.length - skip; j++) {
+		double minx = trueValues[map[0]];
+		double maxx = trueValues[map[0]];
+		for (int j = 0; j < estimates.length; j++) {
 			min = Math.min(min, lows[j]);
 			max = Math.max(max, upps[j]);
-			minx = Math.min(minx, trueValues[j + skip]);
-			maxx = Math.max(maxx, trueValues[j + skip]);
+			minx = Math.min(minx, trueValues[map[j]]);
+			maxx = Math.max(maxx, trueValues[map[j]]);
 		}
 		double range = max - min;
 		double rangex = maxx - minx;
@@ -316,7 +389,7 @@ public class CoverageCalculator extends Runnable {
 			
 			// boolean trait, identified by labels starting with "has" or "use" or "is"
 			int [] bins = new int[20];
-			for (int j = 0; j < trueValues.length - skip; j++) {
+			for (int j = 0; j < estimates.length && map[j] < trueValues.length; j++) {
 				bins[(int)((estimates[j] + 0.5/bins.length) * (bins.length - 1))]++;
 			}
 			int y = 0;
@@ -324,7 +397,7 @@ public class CoverageCalculator extends Runnable {
 				double x = 15+j * 1000 / bins.length;
 				double h = 700.0 * bins[j] / estimates.length;
 				String fill = "#5099ff";
-				if (trueValues[j + skip] == 0) {
+				if (trueValues[map[j]] == 0) {
 					if (j < 19) {
 						fill = "#5099ff";
 					} else {
@@ -359,8 +432,8 @@ public class CoverageCalculator extends Runnable {
 			for (int j = 0; j < estimates.length; j++) {
 				double y = lows[j];
 				double h = upps[j] - lows[j];
-				double x = trueValues[j + skip]; 
-				if (lows[j] <= trueValues[j + skip] && trueValues[j + skip] <= upps[j]) {
+				double x = trueValues[map[j]]; 
+				if (lows[j] <= trueValues[map[j]] && trueValues[map[j]] <= upps[j]) {
 					svg.println("  <rect x=\""+x+"\" y=\"" + y+ "\" width=\""+w+"\" height=\""+h+"\" style=\"fill:#5099ff;stroke-width:"+ w/10+";stroke:#8b3d37;opacity:0.5\"/>");
 				} else {
 					svg.println("  <rect x=\""+x+"\" y=\"" + y+ "\" width=\""+w+"\" height=\""+h+"\" style=\"fill:#fa5753;stroke-width:"+ w/10+";stroke:#373d8b;opacity:0.85\"/>");
@@ -368,7 +441,7 @@ public class CoverageCalculator extends Runnable {
 			}
 			for (int j = 0; j < estimates.length; j++) {
 				double y = estimates[j];
-				double x = trueValues[j + skip] + w/2; 
+				double x = trueValues[map[j]] + w/2; 
 				svg.println("<circle cx='"+x+"' cy='"+y+"' r=\""+w/3+"\" stroke=\"black\" stroke-width=\""+w/3+"\" fill=\"black\"/>");
 			}
 			svg.println("</g>");
@@ -392,8 +465,9 @@ public class CoverageCalculator extends Runnable {
 		html.println("<h3>" + label + "</h3>");
 		html.println("<p>Coverage: " + coverage[i] + 
 				" Mean: "  + meanOver_[i] + 
+				(showESSInput.get()?
 				" ESS (mean/min): " + formatter2.format(meanESS_[i]) + 
-				"/" + formatter2.format(minESS_[i]) + (invalidESSReported_[i] ? "*" : "")
+				"/" + formatter2.format(minESS_[i]) + (invalidESSReported_[i] ? "*" : ""):"")
 				+ "</p><p>");
 		html.println("<img width=\"350px\" src=\"" + label + ".svg\">");
 		html.println("</td>");
