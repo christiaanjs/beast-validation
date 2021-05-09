@@ -337,9 +337,9 @@ public class CoverageCalculator extends Runnable {
 
 	
 	
-	
-		Log.warning("Writing to file " + svgdir.getPath()+"/" + label + ".tsv");
-		PrintStream tsv = new PrintStream(svgdir.getPath() +"/" + label + ".tsv");
+		String cleanLabel = label.replaceAll(":", "");
+		Log.warning("Writing to file " + svgdir.getPath()+"/" + cleanLabel + ".tsv");
+		PrintStream tsv = new PrintStream(svgdir.getPath() +"/" + cleanLabel + ".tsv");
 		tsv.println("truth\testimates\t95HPDlow\t95HPDup");
 		for (int j = 0; j < estimates.length; j++) {
 			tsv.println(trueValues[map[j]] + "\t" + estimates[j] + "\t" + lows[j] + "\t" + upps[j]);
@@ -347,8 +347,8 @@ public class CoverageCalculator extends Runnable {
 		tsv.close();
 	
 
-		Log.warning("Writing to file " + svgdir.getPath()+"/" + label + ".svg");
-		PrintStream svg = new PrintStream(svgdir.getPath() +"/" + label + ".svg");
+		Log.warning("Writing to file " + svgdir.getPath()+"/" + cleanLabel + ".svg");
+		PrintStream svg = new PrintStream(svgdir.getPath() +"/" + cleanLabel + ".svg");
 		svg.println("<svg class=\"chart\" width=\"1080\" height=\"760\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">");
 		// define clip path for graph
 		svg.println("<defs>");
@@ -471,7 +471,7 @@ public class CoverageCalculator extends Runnable {
 				" ESS (mean/min): " + formatter2.format(meanESS_[i]) + 
 				"/" + formatter2.format(minESS_[i]) + (invalidESSReported_[i] ? "*" : ""):"")
 				+ "</p><p>");
-		html.println("<img width=\"350px\" src=\"" + label + ".svg\">");
+		html.println("<img width=\"350px\" src=\"" + cleanLabel + ".svg\">");
 		html.println("</td>");
 		if ((k+1) % 4 == 0) {
 			html.println("</tr>");
