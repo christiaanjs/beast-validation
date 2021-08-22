@@ -84,17 +84,18 @@ public class CoverageCalculator extends Runnable {
 		}
 		
 		
-		Log.info(space + "coverage Mean ESS Min ESS");
+		Log.info(space + "coverage  Mean ESS\tMin ESS\tmissmatches");
 		
 		int [] coverage = new int[truth.getLabels().size()];
 		int [] meanOver_ = new int[truth.getLabels().size()];
 		double [] meanESS_ = new double[truth.getLabels().size()];
 		double [] minESS_ = new double[truth.getLabels().size()];
 		boolean [] invalidESSReported_ = new boolean[truth.getLabels().size()];
+		String [] covered_ = new String[truth.getLabels().size()];
 		
 		int [] map = guessFileOrder(estimated, skip);
 
-		calcStats(truth, estimated, coverage, meanOver_, meanESS_, minESS_, invalidESSReported_, map);
+		calcStats(truth, estimated, coverage, meanOver_, meanESS_, minESS_, invalidESSReported_, map, covered_);
 
 
 		if (outputInput.get() != null) {
@@ -104,7 +105,7 @@ public class CoverageCalculator extends Runnable {
     			String label = truth.getLabels().get(i);
     			try {
     				if (!(label.equals("prior") || label.equals("likelihood") || label.equals("posterior") ||
-    						Double.isNaN(truth.getTrace(i+1)[0]))) {
+    						Double.isNaN(truth.getTrace(i+1)[0]) || Double.isNaN(meanESS_[i]))) {
     					output(i, k, label, truth, estimated, svgdir, html,
     							coverage, meanOver_, meanESS_, minESS_, invalidESSReported_,
     							map);
@@ -172,7 +173,7 @@ public class CoverageCalculator extends Runnable {
 
 	private void calcStats(LogAnalyser truth, LogAnalyser estimated,
 			int[] coverage, int[] meanOver_, double[] meanESS_, double[] minESS_, boolean[] invalidESSReported_,
-			int [] map) throws IOException {
+			int [] map, String[]covered_) throws IOException {
 		
 		for (int i = 0; i < truth.getLabels().size(); i++) {
 			String label = truth.getLabels().get(i);
@@ -182,6 +183,7 @@ public class CoverageCalculator extends Runnable {
 				Double [] lows = estimated.getTrace(label+".95%HPDlo");
 				Double [] upps = estimated.getTrace(label+".95%HPDup");
 				Double [] ess = estimated.getTrace(label+".ESS");
+				String coveredString = "", missmatchIDS = "";
 				if (lows == null || upps == null) {
 					Log.warning("Skipping " + label + " due to lack of upper/lower bound data");
 				} else {
@@ -197,10 +199,18 @@ public class CoverageCalculator extends Runnable {
 							if (trueValues[map[j]] == 0) {
 								if (meanValues[j] < 0.95) {
 									covered++;
+									coveredString += ".";
+								} else {
+									coveredString += "x";
+									missmatchIDS += map[j] + " ";
 								}
 							} else {
 								if (meanValues[j] > 0.05) {
 									covered++;
+									coveredString += ".";
+								} else {
+									coveredString += "x";
+									missmatchIDS += map[j] + " ";
 								}
 							}
 							if (!Double.isNaN(ess[j])) {
@@ -222,6 +232,10 @@ public class CoverageCalculator extends Runnable {
 							if (lows[j] <= trueValues[map[j]] && trueValues[map[j]] <= upps[j]) {
 								covered++;
 								// System.out.println(lows[j] +"<=" + trueValues[j + skip] +"&&" + trueValues[j + skip] +" <=" + upps[j]);
+								coveredString += ".";
+							} else {
+								coveredString += "x";
+								missmatchIDS += map[j] + " ";
 							}
 							if (trueValues[map[j]] > meanValues[j]) {
 								meanOver++;
@@ -246,10 +260,11 @@ public class CoverageCalculator extends Runnable {
 					minESS_[i] = minESS;
 					coverage[i] = covered;
 					meanOver_[i] = meanOver;
+					covered_[i] = coveredString;
 					invalidESSReported_[i] = invalidESSReported;
 					Log.info(label + (label.length() < space.length() ? space.substring(label.length()) : " ") + 
 							formatter2.format(covered) + "\t   " + 
-							formatter.format(meanESS) + "  " + formatter.format(minESS));
+							formatter.format(meanESS) + "\t" + formatter.format(minESS) + "\t" + coveredString + " " + missmatchIDS);
 				}
 			} catch (ArrayIndexOutOfBoundsException e) {
 				// we get here if some item in the true log is not available in the summary log
