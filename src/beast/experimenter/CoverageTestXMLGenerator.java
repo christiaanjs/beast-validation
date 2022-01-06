@@ -38,12 +38,14 @@ public class CoverageTestXMLGenerator extends beast.core.Runnable {
 	final public Input<Integer> siteCountInput = new Input<>("siteCount",
 			"number of site to be generted in alignment", 1000);
 	final public Input<Boolean> useGammaInput = new Input<>("useGamma", "use gamma rate heterogeneity", true);
+	final public Input<Boolean> useClockInput = new Input<>("useClock", "use strict clock rate from file (defaults to 1)", true);
 
 	int N = 100;
 	List<Tree> trees;
 	Double[][] f;
 	Double[] kappa;
 	Double[] shapes;
+	Double[] clockRate;
 
 	@Override
 	public void initAndValidate() {
@@ -91,6 +93,7 @@ public class CoverageTestXMLGenerator extends beast.core.Runnable {
 			hky.initByName("frequencies", f, "kappa", kappa[i] + "");
 
 			StrictClockModel clockmodel = new StrictClockModel();
+			clockmodel.initByName("clock.rate", clockRate[i] + "");
 
 			// change gammaCategoryCount=1 for generating without gamma rate
 			// categories
@@ -152,6 +155,16 @@ public class CoverageTestXMLGenerator extends beast.core.Runnable {
 			shapes = new Double[N];
 			for (int i  =0; i < N; i++) {
 				shapes[i] = 1.0;
+			}
+		}
+		
+		clockRate = null;
+		if (useClockInput.get()) {
+			clockRate = trace.getTrace(getIndex(labels, "clockRate"));
+		} else {
+			clockRate = new Double[N];
+			for (int i  =0; i < N; i++) {
+				clockRate[i] = 1.0;
 			}
 		}
 
