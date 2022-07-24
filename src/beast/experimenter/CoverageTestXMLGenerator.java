@@ -18,7 +18,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import beagle.BeagleFlag;
+//import beagle.BeagleFlag;
 
 @Description("Generate XML for performing coverage test (using CoverageCalculator)")
 public class CoverageTestXMLGenerator extends beast.core.Runnable {
@@ -147,7 +147,15 @@ public class CoverageTestXMLGenerator extends beast.core.Runnable {
 			}
 		}
 
-		kappa = trace.getTrace(getIndex(labels, "kappa"));
+		if (getIndex(labels, "kappa") > 0) {
+			kappa = trace.getTrace(getIndex(labels, "kappa"));
+		} else {
+			// assume JC model
+			kappa = new Double[N];
+			for (int i  =0; i < N; i++) {
+				kappa[i] = 1.0;
+			}			
+		}
 		shapes = null;
 		if (useGammaInput.get()) {
 			shapes = trace.getTrace(getIndex(labels, "gammaShape"));
@@ -171,8 +179,8 @@ public class CoverageTestXMLGenerator extends beast.core.Runnable {
 		Logger.FILE_MODE = beast.core.Logger.LogFileMode.overwrite;
 
 		// set up flags for BEAGLE -- YMMV
-		long beagleFlags = BeagleFlag.VECTOR_SSE.getMask() | BeagleFlag.PROCESSOR_CPU.getMask();
-		System.setProperty("beagle.preferred.flags", Long.toString(beagleFlags));
+//		long beagleFlags = BeagleFlag.VECTOR_SSE.getMask() | BeagleFlag.PROCESSOR_CPU.getMask();
+//		System.setProperty("beagle.preferred.flags", Long.toString(beagleFlags));
 
 		NexusParser parser = new beast.util.NexusParser();
 		String treeFile = wdir + treeFileInput.get().getName();

@@ -292,9 +292,9 @@ public class SBCAnalyser extends Runnable {
 		for (int i = 0; i < binCount; i++) {
 			double x = (i+0.0)/binCount;
 			bHi.append(x + "," + (binomHi[i]/max) + " ");
-			x = (i+1.0)/binCount;
+			x = (i+0.5)/binCount;
 			bLo.append(x + "," + (binomLo[i]/max) + " ");
-//			cdf.append(x + "," + (i>0?(cumBins[i-1]/max):0) + " ");
+			//cdf.append(x + "," + (i>0?(cumBins[i-1]/max):0) + " ");
 			cdf.append(x + "," + (cumBins[i]/max) + " ");
 		}
 		bLo.append("1,1");
