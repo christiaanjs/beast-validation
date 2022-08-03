@@ -2,6 +2,8 @@ package beast.validation.tests;
 
 import org.junit.Test;
 
+import beastvalidation.validation.tests.BootstrapMultivariateDistributionTest;
+
 import java.util.Arrays;
 
 import static org.junit.Assert.*;

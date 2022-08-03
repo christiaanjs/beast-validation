@@ -1,12 +1,12 @@
-package beast.validation;
+package beastvalidation.validation;
 
 import beast.base.core.Input;
 import beast.base.inference.Logger;
 import beast.base.inference.Runnable;
-import beast.simulation.Sampler;
-import beast.validation.statistics.Statistics;
-import beast.validation.tests.StatisticalTest;
-import beast.validation.tests.StatisticalTestType;
+import beastvalidation.simulation.Sampler;
+import beastvalidation.validation.statistics.Statistics;
+import beastvalidation.validation.tests.StatisticalTest;
+import beastvalidation.validation.tests.StatisticalTestType;
 
 import java.io.IOException;
 import java.util.ArrayList;

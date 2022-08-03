@@ -1,8 +1,8 @@
-package beast.core;
+package beastvalidation.core;
 
 import beast.base.inference.Logger;
 import beast.base.inference.MCMC;
-import beast.simulation.Sampler;
+import beastvalidation.simulation.Sampler;
 
 import java.io.IOException;
 

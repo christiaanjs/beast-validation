@@ -1,4 +1,4 @@
-package beast.validation.statistics;
+package beastvalidation.validation.statistics;
 
 import beast.base.inference.Distribution;
 import beast.base.core.Input;

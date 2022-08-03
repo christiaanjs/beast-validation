@@ -1,4 +1,4 @@
-package beast.validation.statistics;
+package beastvalidation.validation.statistics;
 
 import beast.base.evolution.tree.Tree;
 

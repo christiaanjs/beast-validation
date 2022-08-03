@@ -1,9 +1,10 @@
-package beast.validation.tests;
+package beastvalidation.validation.tests;
 
-import beast.util.MultivariateNormalDistribution;
 import org.apache.commons.math.MathException;
 import org.apache.commons.math.distribution.ChiSquaredDistribution;
 import org.apache.commons.math.distribution.ChiSquaredDistributionImpl;
+
+import beastvalidation.util.MultivariateNormalDistribution;
 
 import java.util.Arrays;
 import java.util.HashMap;

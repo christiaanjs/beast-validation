@@ -1,4 +1,4 @@
-package beast.validation.tests;
+package beastvalidation.validation.tests;
 
 import beast.base.core.BEASTObject;
 import beast.base.core.Loggable;

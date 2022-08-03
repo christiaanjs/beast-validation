@@ -1,4 +1,4 @@
-package beast.validation.tests;
+package beastvalidation.validation.tests;
 
 import beast.base.core.Input;
 import beast.base.util.Randomizer;

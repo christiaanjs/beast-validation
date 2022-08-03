@@ -1,4 +1,4 @@
-package beast.experimenter;
+package beastvalidation.experimenter;
 
 import beast.base.evolution.tree.Tree;
 import beast.base.inference.Logger;
@@ -13,7 +13,6 @@ import beast.base.evolution.branchratemodel.StrictClockModel;
 import beast.base.evolution.sitemodel.SiteModel;
 import beast.base.evolution.substitutionmodel.Frequencies;
 import beast.base.evolution.substitutionmodel.HKY;
-import beast.util.*;
 import beastfx.app.seqgen.MergeDataWith;
 import beastfx.app.seqgen.SequenceSimulator;
 import beastfx.app.tools.Application;
@@ -21,7 +20,8 @@ import beastfx.app.tools.LogAnalyser;
 import beastfx.app.util.LogFile;
 import beastfx.app.util.TreeFile;
 import beastfx.app.util.XMLFile;
-import beast.core.*;
+import beastvalidation.core.*;
+import beastvalidation.util.*;
 
 import java.io.File;
 import java.io.IOException;

@@ -1,4 +1,4 @@
-package beast.simulation;
+package beastvalidation.simulation;
 
 import beast.base.core.BEASTInterface;
 import beast.base.core.Input;

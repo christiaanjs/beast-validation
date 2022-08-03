@@ -8,10 +8,11 @@
 	</description>
 
 	<!-- set global properties for this build -->
-	<property name="srcExperimenter" location="src" />
-	<property name="buildExperimenter" location="build" />
-	<property name="libExperimenter" location="lib" />
-	<property name="release_dir" value="release" />
+	<property name="experimenter" location="../beast-validation" />
+	<property name="srcExperimenter" location="${experimenter}/src" />
+	<property name="buildExperimenter" location="${experimenter}/build" />
+	<property name="libExperimenter" location="${experimenter}/lib" />
+	<property name="release_dir" value="${experimenter}/release" />
 	<property name="distExperimenter" location="${buildExperimenter}/dist" />
 	<property name="MASTERclasspath" location="../BEASTLabs/build" />
 	<property name="BEASTLabsclasspath" location="../MASTER/build" />
@@ -19,8 +20,9 @@
 	<property name="libBeast2" location="${beast2path}/lib" />
 	<property name="srcBeast2" location="${beast2path}/src" />
 	<property name="beast2classpath" location="${beast2path}/build" />
+	<property name="beastapp2path" location="../BeastFX" />
+	<property name="beastapp2classpath" location="${beastapp2path}/build" />
 	<property name="Add_on_dir" value="${release_dir}/add-on" />
-	<property name="version" value="0.0.1" />
 
     <import file="${beast2path}/build.xml" />
 
@@ -29,14 +31,13 @@
 
 	<path id="classpath">
         <pathelement path="${buildExperimenter}"/>
-	<fileset dir="${libBeast2}" includes="commons-math3-3.1.1.jar"/>
-	<fileset dir="${libBeast2}" includes="antlr-runtime-4.7.jar"/>
-	<fileset dir="${libBeast2}" includes="junit-4.8.2.jar"/>
-	<fileset dir="${libBeast2}" includes="fest.jar"/>
+        <fileset dir="${libBeast2}" includes="antlr-runtime-4.10.jar"/>
+        <fileset dir="${libBeast2}" includes="commons-math3-3.6.1.jar"/>
         <fileset dir="${libBeast2}" includes="beagle.jar"/>
         <fileset dir="${libBeast2}" includes="jam.jar"/>
         <fileset dir="${libBeast2}" includes="colt.jar"/>
         <pathelement path="${beast2classpath}"/>
+        <pathelement path="${beastapp2classpath}"/>        
         <pathelement path="${BEASTLabsclasspath}"/>
         <pathelement path="${MASTERclasspath}"/>
 	</path>
@@ -44,6 +45,15 @@
 	<!-- start -->
 	<target name="initExperimenter">
 		<echo message="${ant.project.name}: ${ant.file}" />
+
+		<available file="${experimenter}/version.xml" property="versionAvailable"/>
+        <fail unless="versionAvailable">
+              ** Required file version.xml does not exist. **
+            </fail>
+
+        <!-- Read package name and version from xml file -->
+            <xmlproperty file="${experimenter}/version.xml" prefix="fromVersionFile" />
+        <property name="experimenterversion" value="${fromVersionFile.package(version)}" />
 	</target>
 
 	<target name="cleanExperimenter">
@@ -80,12 +90,10 @@
 		<!-- Compile the java code from ${srcExperimenter} into ${buildExperimenter} /bin -->
 		<javac srcdir="${srcExperimenter}" destdir="${buildExperimenter}" classpathref="classpath"
 		       fork="true"
-			   source="1.8"
-               target="1.8"
    		       memoryinitialsize="256m"
 		       memorymaximumsize="256m"
 			   >
-			<include name="beast/**/**" />
+			<include name="beastvalidation/**/**" />
 			<!-- compile JUnit test classes -->
 			<include name="test/beast/**" />
 		</javac>
@@ -206,12 +214,12 @@
 		</copy>
 		-->
 
-		<jar jarfile="${distExperimenter}/Experimenter.addon.v${version}.zip">
+		<jar jarfile="${distExperimenter}/Experimenter.addon.v${experimenterversion}.zip">
 			<fileset dir="${Add_on_dir}">
 				<include name="**/*" />
 			</fileset>
         </jar>
-		<echo message="Add-on version v${version} release is finished." />
+		<echo message="Add-on version v${experimenterversion} release is finished." />
 	</target>
 
 </project>

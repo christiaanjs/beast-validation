@@ -1,4 +1,4 @@
-package beast.util;
+package beastvalidation.util;
 
 import org.apache.commons.math3.exception.DimensionMismatchException;
 import org.apache.commons.math3.linear.*;

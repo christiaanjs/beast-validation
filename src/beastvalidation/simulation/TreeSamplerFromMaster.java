@@ -1,4 +1,4 @@
-package beast.simulation;
+package beastvalidation.simulation;
 
 import beast.base.inference.StateNode;
 //import master.BeastTreeFromMaster;

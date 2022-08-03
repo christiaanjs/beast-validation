@@ -1,4 +1,4 @@
-package beast.experimenter;
+package beastvalidation.experimenter;
 
 import java.io.File;
 import java.io.PrintStream;

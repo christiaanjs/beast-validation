@@ -1,4 +1,4 @@
-package beast.experimenter;
+package beastvalidation.experimenter;
 
 import java.util.ArrayList;
 import java.util.List;

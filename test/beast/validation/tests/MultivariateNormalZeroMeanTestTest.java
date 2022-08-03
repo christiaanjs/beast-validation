@@ -3,6 +3,8 @@ package beast.validation.tests;
 import org.apache.commons.math3.stat.descriptive.MultivariateSummaryStatistics;
 import org.junit.Test;
 
+import beastvalidation.validation.tests.MultivariateNormalZeroMeanTest;
+
 import static org.junit.Assert.*;
 
 public class MultivariateNormalZeroMeanTestTest {

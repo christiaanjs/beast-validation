@@ -1,28 +1,31 @@
-<package name='Experimenter' version='0.0.1'>
-	<depends on='beast2' atleast='2.6.0'/>
-	<depends on='BEASTLabs' atleast='1.9.0'/>
+<package name='Experimenter' version='0.0.2'>
+	<depends on='BEAST.base' atleast='2.7.0'/>
+	<depends on='BEAST.app' atleast='2.7.0'/>
+	<depends on='BEASTLabs' atleast='2.0.0'/>
+	<!--
 	<depends on='MASTER' atleast='5.0.0'/>
+	-->
 
 <packageapp description="CoverageCalculator"
-              class="beast.experimenter.CoverageCalculator"
+              class="beastvalidation.experimenter.CoverageCalculator"
               args=""
             />
 <packageapp description="CoverageTestXMLGenerator2"
-              class="beast.experimenter.CoverageTestXMLGenerator2"
+              class="beastvalidation.experimenter.CoverageTestXMLGenerator2"
               args=""
             />
 <packageapp description="TraceKSStats"
-              class="beast.experimenter.TraceKSStats"
+              class="beastvalidation.experimenter.TraceKSStats"
               args=""
             />
             
 <packageapp description="SBCAnalyser"
-              class="beast.experimenter.SBCAnalyser"
+              class="beastvalidation.experimenter.SBCAnalyser"
               args=""
             />
 
 <packageapp description="MCCTreeComparator"
-              class="beast.experimenter.MCCTreeComparator"
+              class="beastvalidation.experimenter.MCCTreeComparator"
               args=""
             />
 </package>

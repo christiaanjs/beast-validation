@@ -1,4 +1,4 @@
-package beast.validation.tests;
+package beastvalidation.validation.tests;
 
 public enum StatisticalTestType {
     OneSample,

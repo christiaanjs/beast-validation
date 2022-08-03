@@ -1,4 +1,4 @@
-package beast.experimenter;
+package beastvalidation.experimenter;
 
 
 import java.math.BigDecimal;

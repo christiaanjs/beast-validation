@@ -2,6 +2,8 @@ package beast.util;
 
 import org.junit.Test;
 
+import beastvalidation.util.MultivariateNormalDistribution;
+
 import static org.junit.Assert.*;
 
 public class MultivariateNormalDistributionTest {
