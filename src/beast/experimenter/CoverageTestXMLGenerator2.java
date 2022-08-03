@@ -1,21 +1,41 @@
 package beast.experimenter;
 
-import beast.evolution.tree.Node;
-import beast.evolution.tree.Tree;
+import beast.base.evolution.tree.Tree;
+import beast.base.inference.Logger;
+import beast.base.inference.parameter.RealParameter;
+import beast.base.parser.NexusParser;
+import beast.base.parser.XMLParserException;
+import beast.base.core.Description;
+import beast.base.core.Input;
+import beast.base.evolution.alignment.Alignment;
+import beast.base.evolution.alignment.Sequence;
+import beast.base.evolution.branchratemodel.StrictClockModel;
+import beast.base.evolution.sitemodel.SiteModel;
+import beast.base.evolution.substitutionmodel.Frequencies;
+import beast.base.evolution.substitutionmodel.HKY;
 import beast.util.*;
-import beast.app.beauti.BeautiDoc;
-import beast.app.util.Application;
-import beast.app.util.*;
+import beastfx.app.seqgen.MergeDataWith;
+import beastfx.app.seqgen.SequenceSimulator;
+import beastfx.app.tools.Application;
+import beastfx.app.tools.LogAnalyser;
+import beastfx.app.util.LogFile;
+import beastfx.app.util.TreeFile;
+import beastfx.app.util.XMLFile;
 import beast.core.*;
+
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
-import beagle.BeagleFlag;
+import beast.base.evolution.tree.Node;
+import beastfx.app.inputeditor.BeautiDoc;
+import java.io.FileWriter;
+
+//import beagle.BeagleFlag;
 
 @Description("Generate XML for performing coverage test (using CoverageCalculator) with SimulatedAlignments")
-public class CoverageTestXMLGenerator2 extends beast.core.Runnable {
+public class CoverageTestXMLGenerator2 extends beast.base.inference.Runnable {
 	final public Input<File> workingDirInput = new Input<>("workingDir",
 			"working directory where input files live and output directory is created");
 	final public Input<String> outDirInput = new Input<>("outDir",
@@ -138,11 +158,11 @@ public class CoverageTestXMLGenerator2 extends beast.core.Runnable {
 
 		traceLabels = trace.getLabels();
 
-		Logger.FILE_MODE = beast.core.Logger.LogFileMode.overwrite;
+		Logger.FILE_MODE = beast.base.inference.Logger.LogFileMode.overwrite;
 
 		// set up flags for BEAGLE -- YMMV
-		long beagleFlags = BeagleFlag.VECTOR_SSE.getMask() | BeagleFlag.PROCESSOR_CPU.getMask();
-		System.setProperty("beagle.preferred.flags", Long.toString(beagleFlags));
+//		long beagleFlags = BeagleFlag.VECTOR_SSE.getMask() | BeagleFlag.PROCESSOR_CPU.getMask();
+//		System.setProperty("beagle.preferred.flags", Long.toString(beagleFlags));
 
 		
 		String treeFile = wdir + treeFileInput.get().getName();
@@ -178,7 +198,7 @@ public class CoverageTestXMLGenerator2 extends beast.core.Runnable {
 	}
 
 	private List<Tree> getTrees(String treeFile) throws IOException {
-		NexusParser parser = new beast.util.NexusParser();
+		NexusParser parser = new beast.base.parser.NexusParser();
 		parser.parseFile(new File(treeFile));
 		List<Tree> trees = parser.trees;
 		int burnin = 0;

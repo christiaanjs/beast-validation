@@ -25,14 +25,14 @@ import org.apache.commons.math3.util.ArithmeticUtils;
 import org.apache.commons.math3.util.FastMath;
 import org.apache.commons.math3.util.MathArrays;
 
-import beast.app.util.Application;
-import beast.app.util.LogFile;
-import beast.core.Description;
-import beast.core.Input;
-import beast.core.Input.Validate;
-import beast.util.LogAnalyser;
-import beast.core.Runnable;
-import beast.core.util.Log;
+import beastfx.app.tools.Application;
+import beast.base.core.Description;
+import beast.base.core.Input;
+import beast.base.core.Input.Validate;
+import beastfx.app.tools.LogAnalyser;
+import beastfx.app.util.LogFile;
+import beast.base.inference.Runnable;
+import beast.base.core.Log;
 
 @Description("Calculate Kolmogorov-Smirnof statistic for comparing trace logs")
 public class TraceKSStats extends Runnable {

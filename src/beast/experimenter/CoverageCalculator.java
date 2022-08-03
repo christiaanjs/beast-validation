@@ -11,16 +11,16 @@ import java.text.NumberFormat;
 import java.util.HashMap;
 import java.util.Map;
 
-import beast.app.beauti.BeautiDoc;
-import beast.app.util.Application;
-import beast.app.util.OutFile;
-import beast.core.Description;
-import beast.core.Input;
-import beast.core.Input.Validate;
-import beast.core.Runnable;
-import beast.core.util.Log;
-import beast.math.Binomial;
-import beast.util.LogAnalyser;
+import beastfx.app.inputeditor.BeautiDoc;
+import beastfx.app.tools.Application;
+import beastfx.app.util.OutFile;
+import beast.base.core.Description;
+import beast.base.core.Input;
+import beast.base.core.Input.Validate;
+import beast.base.inference.Runnable;
+import beast.base.core.Log;
+import beast.base.util.Binomial;
+import beastfx.app.tools.LogAnalyser;
 
 @Description("Calculate how many times entries in log file are covered in an estimated 95% HPD interval")
 public class CoverageCalculator extends Runnable {

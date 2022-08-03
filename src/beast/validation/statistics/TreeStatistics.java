@@ -1,6 +1,6 @@
 package beast.validation.statistics;
 
-import beast.evolution.tree.Tree;
+import beast.base.evolution.tree.Tree;
 
 public abstract class TreeStatistics extends Statistics {
 

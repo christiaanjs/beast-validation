@@ -1,6 +1,6 @@
 package beast.simulation;
 
-import beast.core.StateNode;
+import beast.base.inference.StateNode;
 
 public interface StateNodeSampler extends Sampler {
     public StateNode getStateNode();

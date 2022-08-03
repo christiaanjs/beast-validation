@@ -1,8 +1,8 @@
 package beast.validation;
 
-import beast.core.Input;
-import beast.core.Logger;
-import beast.core.Runnable;
+import beast.base.core.Input;
+import beast.base.inference.Logger;
+import beast.base.inference.Runnable;
 import beast.simulation.Sampler;
 import beast.validation.statistics.Statistics;
 import beast.validation.tests.StatisticalTest;

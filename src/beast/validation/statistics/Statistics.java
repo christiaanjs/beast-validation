@@ -1,7 +1,7 @@
 package beast.validation.statistics;
 
-import beast.core.Input;
-import beast.core.StateNode;
+import beast.base.core.Input;
+import beast.base.inference.StateNode;
 import org.w3c.dom.Node;
 
 import java.io.PrintStream;

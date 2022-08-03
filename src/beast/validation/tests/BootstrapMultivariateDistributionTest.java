@@ -1,7 +1,7 @@
 package beast.validation.tests;
 
-import beast.core.Input;
-import beast.util.Randomizer;
+import beast.base.core.Input;
+import beast.base.util.Randomizer;
 
 import java.util.Arrays;
 import java.util.HashMap;

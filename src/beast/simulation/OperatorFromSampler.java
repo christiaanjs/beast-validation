@@ -1,9 +1,9 @@
 package beast.simulation;
 
-import beast.core.BEASTInterface;
-import beast.core.Input;
-import beast.core.Operator;
-import beast.core.StateNode;
+import beast.base.core.BEASTInterface;
+import beast.base.core.Input;
+import beast.base.inference.Operator;
+import beast.base.inference.StateNode;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -9,15 +9,15 @@ import org.apache.commons.math.MathException;
 import org.apache.commons.math.distribution.BinomialDistribution;
 import org.apache.commons.math.distribution.BinomialDistributionImpl;
 
-import beast.app.util.Application;
-import beast.app.util.OutFile;
-import beast.core.Citation;
-import beast.core.Description;
-import beast.core.Input;
-import beast.core.Runnable;
-import beast.core.Input.Validate;
-import beast.core.util.Log;
-import beast.util.LogAnalyser;
+import beastfx.app.tools.Application;
+import beast.base.core.Citation;
+import beast.base.core.Description;
+import beast.base.core.Input;
+import beast.base.inference.Runnable;
+import beast.base.core.Input.Validate;
+import beast.base.core.Log;
+import beastfx.app.tools.LogAnalyser;
+import beastfx.app.util.OutFile;
 
 @Description(value="Validating  Bayesian  Inference Algorithms  with  Simulation-Based Calibration")
 @Citation(value="Sean Talts, Michael Betancourt, Daniel Simpson, Aki Vehtari, Andrew Gelman, Validating  Bayesian  Inference Algorithms  with  Simulation-Based Calibration, 2018, arXiv:1804.06788v1", DOI="arXiv:1804.06788v1")

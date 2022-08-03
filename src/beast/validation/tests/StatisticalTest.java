@@ -1,7 +1,7 @@
 package beast.validation.tests;
 
-import beast.core.BEASTObject;
-import beast.core.Loggable;
+import beast.base.core.BEASTObject;
+import beast.base.core.Loggable;
 
 import java.io.PrintStream;
 import java.util.List;

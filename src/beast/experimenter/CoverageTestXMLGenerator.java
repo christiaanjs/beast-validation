@@ -1,17 +1,29 @@
 package beast.experimenter;
 
-import beast.evolution.substitutionmodel.*;
-import beast.evolution.tree.Tree;
-import beast.evolution.sitemodel.*;
-import beast.evolution.alignment.*;
-import beast.evolution.branchratemodel.StrictClockModel;
+
+
+import beast.base.evolution.tree.Tree;
+import beast.base.inference.Logger;
+import beast.base.inference.parameter.RealParameter;
+import beast.base.parser.NexusParser;
+import beast.base.parser.XMLParserException;
+import beast.base.core.Description;
+import beast.base.core.Input;
+import beast.base.evolution.alignment.Alignment;
+import beast.base.evolution.alignment.Sequence;
+import beast.base.evolution.branchratemodel.StrictClockModel;
+import beast.base.evolution.sitemodel.SiteModel;
+import beast.base.evolution.substitutionmodel.Frequencies;
+import beast.base.evolution.substitutionmodel.HKY;
 import beast.util.*;
-import beast.app.seqgen.MergeDataWith;
-import beast.app.seqgen.SequenceSimulator;
-import beast.app.util.Application;
-import beast.app.util.*;
+import beastfx.app.seqgen.MergeDataWith;
+import beastfx.app.seqgen.SequenceSimulator;
+import beastfx.app.tools.Application;
+import beastfx.app.tools.LogAnalyser;
+import beastfx.app.util.LogFile;
+import beastfx.app.util.TreeFile;
+import beastfx.app.util.XMLFile;
 import beast.core.*;
-import beast.core.parameter.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -21,7 +33,7 @@ import java.util.List;
 //import beagle.BeagleFlag;
 
 @Description("Generate XML for performing coverage test (using CoverageCalculator)")
-public class CoverageTestXMLGenerator extends beast.core.Runnable {
+public class CoverageTestXMLGenerator extends beast.base.inference.Runnable {
 	final public Input<File> workingDirInput = new Input<>("workingDir",
 			"working directory where input files live and output directory is created");
 	final public Input<String> outDirInput = new Input<>("outDir",
@@ -89,7 +101,7 @@ public class CoverageTestXMLGenerator extends beast.core.Runnable {
 			Frequencies f = new Frequencies();
 			f.initByName("frequencies", freqs);
 
-			HKY hky = new beast.evolution.substitutionmodel.HKY();
+			HKY hky = new beast.base.evolution.substitutionmodel.HKY();
 			hky.initByName("frequencies", f, "kappa", kappa[i] + "");
 
 			StrictClockModel clockmodel = new StrictClockModel();
@@ -102,9 +114,9 @@ public class CoverageTestXMLGenerator extends beast.core.Runnable {
 			SiteModel sitemodel = new SiteModel();
 			sitemodel.initByName("gammaCategoryCount", gcc, "substModel", hky, "shape", "" + shapes[i],
 					"proportionInvariant", p);
-			MergeDataWith mergewith = new beast.app.seqgen.MergeDataWith();
+			MergeDataWith mergewith = new MergeDataWith();
 			mergewith.initByName("template", analysisXML, "output", dir + "/analysis-out" + i + ".xml");
-			SequenceSimulator sim = new beast.app.seqgen.SequenceSimulator();
+			SequenceSimulator sim = new SequenceSimulator();
 			sim.initByName("data", data, "tree", tree, "sequencelength", siteCountInput.get(), "outputFileName",
 					"gammaShapeSequence.xml", "siteModel", sitemodel, "branchRateModel", clockmodel,
 					"merge", mergewith);
@@ -176,13 +188,13 @@ public class CoverageTestXMLGenerator extends beast.core.Runnable {
 			}
 		}
 
-		Logger.FILE_MODE = beast.core.Logger.LogFileMode.overwrite;
+		Logger.FILE_MODE = beast.base.inference.Logger.LogFileMode.overwrite;
 
 		// set up flags for BEAGLE -- YMMV
 //		long beagleFlags = BeagleFlag.VECTOR_SSE.getMask() | BeagleFlag.PROCESSOR_CPU.getMask();
 //		System.setProperty("beagle.preferred.flags", Long.toString(beagleFlags));
 
-		NexusParser parser = new beast.util.NexusParser();
+		NexusParser parser = new beast.base.parser.NexusParser();
 		String treeFile = wdir + treeFileInput.get().getName();
 		if (!new File(treeFile).exists()) {
 			treeFile = treeFileInput.get().getName();

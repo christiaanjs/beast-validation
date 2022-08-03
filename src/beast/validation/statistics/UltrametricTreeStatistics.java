@@ -1,7 +1,7 @@
 package beast.validation.statistics;
 
 
-import beast.core.Input;
+import beast.base.core.Input;
 
 import java.io.PrintStream;
 import java.util.Arrays;

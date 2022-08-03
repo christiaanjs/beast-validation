@@ -1,8 +1,8 @@
 package beast.validation.statistics;
 
-import beast.core.Distribution;
-import beast.core.Input;
-import beast.core.parameter.RealParameter;
+import beast.base.inference.Distribution;
+import beast.base.core.Input;
+import beast.base.inference.parameter.RealParameter;
 import org.apache.commons.math3.util.Pair;
 
 import java.io.PrintStream;

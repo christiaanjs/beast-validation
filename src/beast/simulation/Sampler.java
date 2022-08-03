@@ -1,6 +1,6 @@
 package beast.simulation;
 
-import beast.core.StateNode;
+import beast.base.inference.StateNode;
 
 public interface Sampler {
     public void nextState(int sampleNr);
