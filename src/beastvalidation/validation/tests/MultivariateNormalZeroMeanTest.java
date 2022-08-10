@@ -25,7 +25,7 @@ public class MultivariateNormalZeroMeanTest extends StatisticalTest {
 
     private double testStatistic;
 
-    protected void initSampleStats(double[][] values){
+    public void initSampleStats(double[][] values){
         n = values.length;
         d = values[0].length;
 

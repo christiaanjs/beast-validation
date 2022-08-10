@@ -3,6 +3,7 @@ package beastvalidation.experimenter;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.text.DecimalFormat;
 import java.util.Arrays;
 
 import org.apache.commons.math.MathException;
@@ -14,6 +15,7 @@ import beast.base.core.Citation;
 import beast.base.core.Description;
 import beast.base.core.Input;
 import beast.base.inference.Runnable;
+import beast.base.util.Randomizer;
 import beast.base.core.Input.Validate;
 import beast.base.core.Log;
 import beastfx.app.tools.LogAnalyser;
@@ -91,8 +93,11 @@ public class SBCAnalyser extends Runnable {
 		Log.info(CoverageCalculator.space + "\tmissed\t" + b.toString());
 		
 		int k = 0;
-		StringBuilder html2 = new StringBuilder();
-		html2.append("<table>\n");
+		StringBuilder [] html2 = new StringBuilder[2];
+		html2[0] = new StringBuilder();
+		html2[1] = new StringBuilder();
+		html2[0].append("<table>\n");
+		html2[1].append("<table>\n");
 		for (int i = 0; i < truth.getLabels().size(); i++) {
 			String label = truth.getLabels().get(i);
 			if (!(label.equals("prior") || label.equals("likelihood") || label.equals("posterior") ||
@@ -102,14 +107,16 @@ public class SBCAnalyser extends Runnable {
 				k++;
 			}						
 		}
-		html2.append("</table>\n");
+		html2[0].append("</table>\n");
+		html2[1].append("</table>\n");
 		//Log.info("Expected number of misses: " + 0.05 * binom.getNumberOfTrials());
 		
 		if (html != null) {
 			//html.println("Expected number of misses: " + 0.05 * binom.getNumberOfTrials());
 			html.println("</table>");
 			html.println();
-			html.println(html2.toString());
+			html.println(html2[0].toString());
+			html.println(html2[1].toString());
 			html.println("</body>\n</html>");
 			html.close();
 			
@@ -124,8 +131,9 @@ public class SBCAnalyser extends Runnable {
 		Log.warning("Done!");	
 	}
 
+	double [][] bounds = null;
 	private void output(int i, int k2, String label, LogAnalyser truth, LogAnalyser estimated, File svgdir, int skip,
-			PrintStream html, StringBuilder html2, int binCount, int L, int pLow, int pUp, int pLow95, int pUp95, int pExp) 
+			PrintStream html, StringBuilder []html2, int binCount, int L, int pLow, int pUp, int pLow95, int pUp95, int pExp) 
 					throws IOException, MathException {
 		Double [] trueValues = truth.getTrace(label);
 		Double [] estimates = estimated.getTrace(label);
@@ -218,17 +226,75 @@ public class SBCAnalyser extends Runnable {
 					b.toString());
 
 			if (html != null) {
+				if (bounds == null) {
+					bounds = new double[2][binCount + 1];
+					simulateBounds(100000, trueValues.length, binCount, bounds);
+				}
 				outputHTML(k2, label, svgdir, skip, html, html2, binCount, L, pLow, pUp, pLow95, pUp95, pExp, bins, missed,
-						cumBins, binomLo, binomHi 
+						cumBins, binomLo, binomHi, bounds 
 						);
 			}
 		}		
 	}
 
+	
+	/** run a number of trials, and empirically determine bounds for N experiments and `bins` bins **/
+	public static void simulateBounds(int trials, int N, int bins, double[][] bounds) {
+		double deltaBin = (double)1.0/(double)bins;
+		
+		int [][] counts = new int[bins][trials];
+		for (int i = 0; i < trials; i++) {
+			int [] count = new int[bins];
+			for (int j = 0; j < N; j++) {
+				double r = Randomizer.nextDouble();
+				int bin = (int)(r / deltaBin);
+				count[bin]++;
+			}
+			int sum = 0;
+			for (int k = 0;k < bins; k++) {
+				counts[k][i] = sum + count[k];
+				sum += count[k];
+			}
+		}
+		for (int k = 0;k < bins; k++) {
+			Arrays.sort(counts[k]);
+		}
+		
+		// Take 95% **symmetric** confidence interval for bounds
+		// Note, these are not HPDs.
+		for (int k = 0; k < bins; k++) {
+			bounds[0][k+1] = (double)counts[k][(int)(2.5*trials/100.0)]/(double)N;
+			bounds[1][k+1] = (double)counts[k][(int)(97.5*trials/100.0)]/(double)N;
+		}
+		
+		// get rid of noise
+		double [] tmp = new double[bounds[0].length];
+		int w = 3;
+
+		System.arraycopy(bounds[0], 0, tmp, 0, bounds[0].length);
+		for (int k = w; k < bins-w; k++) {
+			double sum = 0;
+			for (int i = -w; i <= w; i++) {
+				sum += tmp[k + i];
+			}
+			bounds[0][k] = sum /= (2*w+1);
+		}
+		
+		System.arraycopy(bounds[1], 0, tmp, 0, bounds[0].length);
+		for (int k = w; k < bins-w; k++) {
+			double sum = 0;
+			for (int i = -w; i <= w; i++) {
+				sum += tmp[k + i];
+			}
+			bounds[1][k] = sum /= (2*w+1);
+		}
+	}
+
 	private void outputHTML(int k2, String label, File svgdir, int skip,
 			PrintStream html, 
-			StringBuilder html2, int binCount, int L, int pLow, int pUp, int pLow95, int pUp95, int pExp, int [] bins, int missed,
-			int [] cumBins, double [] binomLo, double [] binomHi
+			StringBuilder [] html2, int binCount, int L, int pLow, int pUp, int pLow95, int pUp95, int pExp, int [] bins, int missed,
+			int [] cumBins, double [] binomLo, double [] binomHi,
+			double [][] bounds
 			) throws IOException {
 		int max = pUp;
 		for (int d : bins) {
@@ -244,14 +310,16 @@ public class SBCAnalyser extends Runnable {
 		
 		outputSVGGraph(label, svgdir, binCount, pLow, pUp, pLow95, pUp95, pExp, bins, max);
 		
-		outputECDFGraph(label, svgdir, binCount, cumBins, binomLo, binomHi);
+		outputECDFGraph(label, svgdir, binCount, cumBins, binomLo, binomHi, bounds);
 		
+		outputECDFDiffGraph(label, svgdir, binCount, cumBins, binomLo, binomHi, bounds);
 		
 		
 		
 		if (k2 % 4 == 0) {
 			html.println("<tr>");
-			html2.append("<tr>\n");
+			html2[0].append("<tr>\n");
+			html2[1].append("<tr>\n");
 		}
 		html.println("<td>");
 		html.println("<h3>" + label + "</h3>");
@@ -259,29 +327,30 @@ public class SBCAnalyser extends Runnable {
 		html.println("<img width=\"350px\" src=\"" + label + ".svg\">");
 		html.println("</td>");
 
-		html2.append("<td>");
-		html2.append("<h3>" + label + "</h3>");
-		html2.append("<p>Missed: " + missed + "</p><p>");
-		html2.append("<img width=\"350px\" src=\"" + label + ".ECDF.svg\">");
-		html2.append("</td>");
+		html2[0].append("<td>");
+		html2[0].append("<h3>" + label + "</h3>");
+		html2[0].append("<p>Missed: " + missed + "</p><p>");
+		html2[0].append("<img width=\"350px\" src=\"" + label + ".ECDF.svg\">");
+		html2[0].append("</td>");
 		
+		html2[1].append("<td>");
+		html2[1].append("<h3>" + label + "</h3>");
+		html2[1].append("<p>Missed: " + missed + "</p><p>");
+		html2[1].append("<img width=\"350px\" src=\"" + label + "Diff.ECDF.svg\">");
+		html2[1].append("</td>");
+
 		if ((k2+1) % 4 == 0) {
 			html.println("</tr>");
-			html2.append("</tr>\n");
+			html2[1].append("</tr>\n");
+			html2[1].append("</tr>\n");
 		}
 	}
 
-	private void outputECDFGraph(String label, File svgdir, int binCount, int[] cumBins, double[] binomLo,
-			double[] binomHi) throws IOException {
+	private void outputECDFGraph(String label, File svgdir, int binCount, int[] cumBins, 
+			double[] binomLo,
+			double[] binomHi,
+			double[][] bounds) throws IOException {
 		double max = cumBins[cumBins.length - 1];
-		
-		PrintStream svg = new PrintStream(svgdir.getPath() +"/" + label + ".ECDF.svg");
-		svg.println("<svg class=\"chart\" width=\"1080\" height=\"780\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">");
-		
-		
-		// bars
-		double dx = 1000.0;
-		double dy = 740.0;
 		
 		StringBuilder bHi = new StringBuilder();
 		bHi.append("0,0 ");
@@ -291,16 +360,81 @@ public class SBCAnalyser extends Runnable {
 		cdf.append("0,0 ");
 		for (int i = 0; i < binCount; i++) {
 			double x = (i+0.0)/binCount;
-			bHi.append(x + "," + (binomHi[i]/max) + " ");
 			x = (i+0.5)/binCount;
-			bLo.append(x + "," + (binomLo[i]/max) + " ");
 			//cdf.append(x + "," + (i>0?(cumBins[i-1]/max):0) + " ");
 			cdf.append(x + "," + (cumBins[i]/max) + " ");
+		}
+		for (int i = 0; i < bounds[0].length-1; i++) {
+			double x = (i+0.0)/(bounds[0].length-1);
+			bHi.append(x + "," + (binomHi[i]/max) + " ");
+			x = (i+0.5)/(bounds[0].length-1);
+			bLo.append(x + "," + (binomLo[i]/max) + " ");
 		}
 		bLo.append("1,1");
 		bHi.append("1,1");
 		cdf.append("1,1 ");
+
+		StringBuilder bHi2 = new StringBuilder();
+		StringBuilder bLo2 = new StringBuilder();
+		for (int i = 0; i < bounds[0].length; i++) {
+			double x = (i+0.0)/(bounds[0].length-1);
+			bLo2.append(x + "," + bounds[0][i] + " ");
+			bHi2.append(x + "," + bounds[1][i] + " ");
+		}
+
+		outputSVG(label, svgdir, binCount, bHi, bLo, cdf, bHi2, bLo2);
+	}
 		
+	private void outputECDFDiffGraph(String label, File svgdir, int binCount, int[] cumBins, 
+			double[] binomLo,
+			double[] binomHi,
+			double[][] bounds) throws IOException {
+		double max = cumBins[cumBins.length - 1];
+		
+		StringBuilder bHi = new StringBuilder();
+		bHi.append("0,0.5 ");
+		StringBuilder bLo = new StringBuilder();
+		bLo.append("0,0.5 ");
+		StringBuilder cdf = new StringBuilder();
+		cdf.append("0,0.5 ");
+		for (int i = 0; i < binCount; i++) {
+			double x = (i+0.0)/binCount;
+			bHi.append(x + "," + diff(x, binomHi[i]/max) + " ");
+			x = (i+0.5)/binCount;
+			bLo.append(x + "," + diff(x, binomLo[i]/max) + " ");
+			//cdf.append(x + "," + (i>0?(cumBins[i-1]/max):0) + " ");
+			cdf.append(x + "," + diff(x, (cumBins[i]/max)) + " ");
+		}
+		bLo.append("1,0.5");
+		bHi.append("1,0.5");
+		cdf.append("1,0.5 ");
+
+		StringBuilder bHi2 = new StringBuilder();
+		StringBuilder bLo2 = new StringBuilder();
+		for (int i = 0; i < bounds[0].length; i++) {
+			double x = (i+0.0)/(bounds[0].length-1);
+			bLo2.append(x + "," + diff(x, bounds[0][i]) + " ");
+			bHi2.append(x + "," + diff(x, bounds[1][i]) + " ");
+		}
+
+		outputSVG(label+"Diff", svgdir, binCount, bHi, bLo, cdf, bHi2, bLo2);
+	}
+
+	
+	private double diff(double x, double y) {
+		y = 0.5 + y - x;
+		y = 0.5 + (y-0.5) * 4.0;
+		return y;
+	}
+
+	private void outputSVG(String label, File svgdir, int binCount, StringBuilder bHi, StringBuilder bLo, StringBuilder cdf, StringBuilder bHi2, StringBuilder bLo2) throws IOException  {
+		// bars
+		double dx = 1000.0;
+		double dy = 740.0;
+	
+		PrintStream svg = new PrintStream(svgdir.getPath() +"/" + label + ".ECDF.svg");
+		svg.println("<svg class=\"chart\" width=\"1080\" height=\"780\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">");
+
 		svg.println("<g transform=\"translate(30,700) scale("+dx+",-"+700+")\">");
 		// grid
 		svg.println("<rect x='0.2' y='0' width=\"0.2\" height=\"1\" style=\"fill:none;stroke-width:0.001;stroke:rgb(0,0,0);opacity: 0.5;\"/>");
@@ -308,23 +442,31 @@ public class SBCAnalyser extends Runnable {
 		svg.println("<rect x='0' y='0.2' width=\"1\" height=\"0.2\" style=\"fill:none;stroke-width:0.001;stroke:rgb(0,0,0);opacity: 0.5;\"/>");
 		svg.println("<rect x='0' y='0.6' width=\"1\" height=\"0.2\" style=\"fill:none;stroke-width:0.001;stroke:rgb(0,0,0);opacity: 0.5;\"/>");
 		svg.println("<rect x='0' y='0' width=\"1\" height=\"1\" style=\"fill:none;stroke-width:0.0025;stroke:rgb(0,0,0);opacity: 0.5;\"/>");
-		svg.println("  <polyline points=\"0,0 1,1\" style=\"fill:none;stroke-width:0.005;stroke:rgb(0,0,0);opacity: 0.5;\"/>");
+		if (label.endsWith("Diff")) {
+			svg.println("  <polyline points=\"0,0.5 1,0.5\" style=\"fill:none;stroke-width:0.005;stroke:rgb(0,0,0);opacity: 0.5;\"/>");
+		} else {
+			svg.println("  <polyline points=\"0,0 1,1\" style=\"fill:none;stroke-width:0.005;stroke:rgb(0,0,0);opacity: 0.5;\"/>");
+		}
 
 		
 		// ECDF graph + bounds
-		svg.println("  <polyline points=\"" + bHi.toString() + "\" style=\"fill:none;stroke-width:0.01;stroke:rgb(0,0,200);opacity: 0.5;\"/>");
-		svg.println("  <polyline points=\"" + bLo.toString() + "\" style=\"fill:none;stroke-width:0.01;stroke:rgb(0,0,200);opacity: 0.5;\"/>");
-		svg.println("  <polyline points=\"" + cdf.toString() + "\" style=\"fill:none;stroke-width:0.01;stroke:rgb(0,0,0);opacity: 1.0;\"/>");
+//		svg.println("  <polyline points=\"" + bHi.toString() + "\" style=\"fill:none;stroke-width:0.01;stroke:rgb(0,0,200);opacity: 0.5;\"/>");
+//		svg.println("  <polyline points=\"" + bLo.toString() + "\" style=\"fill:none;stroke-width:0.01;stroke:rgb(0,0,200);opacity: 0.5;\"/>");
+		
+		svg.println("  <polyline points=\"" + bHi2.toString() + "\" style=\"fill:none;stroke-width:0.01;stroke:rgb(0,200,200);opacity: 0.5;\"/>");
+		svg.println("  <polyline points=\"" + bLo2.toString() + "\" style=\"fill:none;stroke-width:0.01;stroke:rgb(0,200,200);opacity: 0.5;\"/>");
 
+		svg.println("  <polyline points=\"" + cdf.toString() + "\" style=\"fill:none;stroke-width:0.01;stroke:rgb(0,0,0);opacity: 1.0;\"/>");
 
 		svg.println("</g>");
 		svg.println("<text style='font-size:20pt' x='0' y='20'>1.0</text>");
 		svg.println("<text style='font-size:20pt' x='0' y='710'>0</text>");
-		svg.println("<text style='font-size:20pt' x='"+(10+500/binCount)+"' y='720'>" + 1 + "</text>");
+		svg.println("<text style='font-size:20pt' x='"+(10+500/binCount)+"' y='720'>" + 0 + "</text>");
+		DecimalFormat f = new DecimalFormat("#.#");
 		for (int j = 10; j <= binCount; j+=10) {
 			int x = 10 + j*1000/binCount - 500/binCount;
 			int y = 720;
-			svg.println("<text style='font-size:20pt' x='"+x+"' y='"+y+"'>" + Math.round((j+0.0)/binCount) + "</text>");
+			svg.println("<text style='font-size:20pt' x='"+x+"' y='"+y+"'>" + f.format((j+0.0)/binCount) + "</text>");
 		}
 		svg.println("</svg>");
 		svg.close();	
