@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.text.DecimalFormat;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.apache.commons.math.MathException;
 import org.apache.commons.math.distribution.BinomialDistribution;
@@ -36,13 +38,27 @@ public class SBCAnalyser extends Runnable {
 	final public Input<Boolean> useRankedBinsInput = new Input<>("useRankedBins", "if true use ranking wrt prior to find bins."
 			+ "if false, use empirical bins based on prior.", true);
 
+	final public Input<String> excludeInput = new Input<>("exclude", "comma separated list of entries to exclude from the analysis", "");
+
 	
 	@Override
 	public void initAndValidate() {
 	}
 
+	Set<String> exclude;
+	
 	@Override
 	public void run() throws Exception {
+		exclude = new HashSet<>();
+		if (excludeInput.get() != null && excludeInput.get().trim().length() > 0) {
+			for (String s : excludeInput.get().split(",")) {
+				exclude.add(s.trim());
+			}
+		}
+		exclude.add("posterior");
+		exclude.add("prior");
+		exclude.add("likelihood");
+		
 		File svgdir = null;
 		PrintStream html = null;
 		if (outputInput.get() != null && !outputInput.get().getName().equals("[[none]]")) {
@@ -100,7 +116,7 @@ public class SBCAnalyser extends Runnable {
 		html2[1].append("<table>\n");
 		for (int i = 0; i < truth.getLabels().size(); i++) {
 			String label = truth.getLabels().get(i);
-			if (!(label.equals("prior") || label.equals("likelihood") || label.equals("posterior") ||
+			if (!(exclude.contains(label) ||
 					Double.isNaN(truth.getTrace(i+1)[0]))) {
 				output(i, k, label, truth, estimated, svgdir, skip, html, html2,
 						binCount, L, pLow, pUp, pLow95, pUp95, pExp);
@@ -263,8 +279,8 @@ public class SBCAnalyser extends Runnable {
 		// Take 95% **symmetric** confidence interval for bounds
 		// Note, these are not HPDs.
 		for (int k = 0; k < bins; k++) {
-			bounds[0][k+1] = (double)counts[k][(int)(2.5*trials/100.0)]/(double)N;
-			bounds[1][k+1] = (double)counts[k][(int)(97.5*trials/100.0)]/(double)N;
+			bounds[0][k+1] = (double)counts[k][(int)( 2.5 * trials/100.0)]/(double)N;
+			bounds[1][k+1] = (double)counts[k][(int)(97.5 * trials/100.0)]/(double)N;
 		}
 		
 		// get rid of noise

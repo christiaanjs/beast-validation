@@ -9,7 +9,9 @@ import java.io.PrintStream;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import beastfx.app.inputeditor.BeautiDoc;
 import beastfx.app.tools.Application;
@@ -38,11 +40,13 @@ public class CoverageCalculator extends Runnable {
 			+ "Items that are not specified are considered to be of type double");
 	final public Input<Boolean> guessFileOrderInput = new Input<>("guessFileOrder", "guess order of entries in logAnalyser file based on file name, otherwise assume order is the same as in log-file with actual values", true);
 	final public Input<Boolean> showESSInput = new Input<>("showESS", "show information about ESSs", true);
+	final public Input<String> excludeInput = new Input<>("exclude", "comma separated list of entries to exclude from the analysis", "");
 			
 	
 	final static String space = "                                                ";
 	NumberFormat formatter = new DecimalFormat("#0.00");
 	NumberFormat formatter2 = new DecimalFormat("#0");
+	Set<String> exclude;
 
 	Map<String, String> typeMap;
 	@Override
@@ -51,6 +55,16 @@ public class CoverageCalculator extends Runnable {
 
 	@Override
 	public void run() throws Exception {
+		exclude = new HashSet<>();
+		if (excludeInput.get() != null && excludeInput.get().trim().length() > 0) {
+			for (String s : excludeInput.get().split(",")) {
+				exclude.add(s.trim());
+			}
+		}
+		exclude.add("posterior");
+		exclude.add("prior");
+		exclude.add("likelihood");
+
 		typeMap = processTypes();
 		
 		LogAnalyser truth = new LogAnalyser(logFileInput.get().getAbsolutePath(), 0, true, false);
@@ -104,7 +118,7 @@ public class CoverageCalculator extends Runnable {
         	for (int i = 0; i < truth.getLabels().size(); i++) {
     			String label = truth.getLabels().get(i);
     			try {
-    				if (!(label.equals("prior") || label.equals("likelihood") || label.equals("posterior") ||
+    				if (!(exclude.contains(label) || 
     						Double.isNaN(truth.getTrace(i+1)[0]) || Double.isNaN(meanESS_[i]))) {
     					output(i, k, label, truth, estimated, svgdir, html,
     							coverage, meanOver_, meanESS_, minESS_, invalidESSReported_,
