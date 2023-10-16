@@ -70,6 +70,8 @@ public class CoverageCalculator extends Runnable {
 		LogAnalyser truth = new LogAnalyser(logFileInput.get().getAbsolutePath(), 0, true, false);
 		LogAnalyser estimated = new LogAnalyser(logAnalyserFileInput.get().getAbsolutePath(), 0, true, false);
 		int skip = skipLogLinesInput.get();
+		int n = estimated.getTrace(0).length;
+		int [] hpd = get95PercentBinomialHPD(n);
 
 		PrintStream html = null;
 		File svgdir = null;
@@ -86,8 +88,6 @@ public class CoverageCalculator extends Runnable {
 					"<body>\n");
 			html.println("<h2>Coverage calculations</h2>");
 			html.println("<li>prior sample: " + logFileInput.get().getPath()+"</li>");
-			int n = estimated.getTrace(0).length;
-			int [] hpd = get95PercentBinomialHPD(n);
 			html.println("<li>posterior samples: " + logAnalyserFileInput.get().getPath() + " with " + n + " runs so coverage should be from " + hpd[0] + " to " + hpd[1] +"</li>");
 			html.println("<table>");
 		}		
@@ -98,7 +98,9 @@ public class CoverageCalculator extends Runnable {
 		}
 		
 		
+		Log.info("posterior samples: " + logAnalyserFileInput.get().getPath() + " with " + n + " runs so coverage should be from " + hpd[0] + " to " + hpd[1] +"</li>");
 		Log.info(space + "coverage  Mean ESS\tMin ESS\tmissmatches");
+
 		
 		int [] coverage = new int[truth.getLabels().size()];
 		int [] meanOver_ = new int[truth.getLabels().size()];

@@ -1,5 +1,5 @@
 <!-- Build Experimenter. It is also used by Hudson Experimenter project. JUnit test is available for this build. -->
-<project basedir="." default="addon" name="BUILD_Experimenter">
+<project basedir="." default="package" name="BUILD_Experimenter">
 	<description>
 	    Build Experimenter.
             Also used by Hudson Experimenter project.
@@ -53,6 +53,9 @@
 
         <!-- Read package name and version from xml file -->
             <xmlproperty file="${experimenter}/version.xml" prefix="fromVersionFile" />
+        <property name="projName" value="${fromVersionFile.package(name)}" />
+        <property name="projVersion" value="${fromVersionFile.package(version)}" />
+        <property name="fullName" value="${projName}.package.v${projVersion}"/>
         <property name="experimenterversion" value="${fromVersionFile.package(version)}" />
 	</target>
 
@@ -132,7 +135,7 @@
 				<include name="**/*.xsl" />
 			</fileset>
         </jar>
-		<jar jarfile="${distExperimenter}/Experimenter.addon.jar">
+		<jar jarfile="${distExperimenter}/Experimenter.package.jar">
 			<manifest>
 				<attribute name="Built-By" value="${user.name}" />
 			</manifest>
@@ -183,7 +186,7 @@
 	</target>
 
 
-	<target name="addon"
+	<target name="package"
 	        depends="build_jar_all_Experimenter_NoJUnitTest"
 	        description="release BEAST 2 add-on version of Experimenter">
 
@@ -203,7 +206,7 @@
 		</copy>
 		-->
 		<copy todir="${Add_on_dir}/lib">
-			<fileset dir="${distExperimenter}" includes="Experimenter.addon.jar" />
+			<fileset dir="${distExperimenter}" includes="Experimenter.package.jar" />
 		</copy>
 		<copy todir="${Add_on_dir}">
 			<fileset dir="${distExperimenter}" includes="Experimenter.src.jar" />
@@ -214,12 +217,37 @@
 		</copy>
 		-->
 
-		<jar jarfile="${distExperimenter}/Experimenter.addon.v${experimenterversion}.zip">
+		<jar jarfile="${distExperimenter}/Experimenter.package.v${experimenterversion}.zip">
 			<fileset dir="${Add_on_dir}">
 				<include name="**/*" />
 			</fileset>
         </jar>
 		<echo message="Add-on version v${experimenterversion} release is finished." />
 	</target>
+
+
+ 	<condition property="isWindows"><os family="windows" /></condition>
+	<condition property="isLinux"><and><os family="unix"/><not><os family="mac"/></not></and></condition>
+	<condition property="isMac"><os family="mac" /></condition>
+
+	<target name="installLinux" depends="package" if="isLinux">
+	        <mkdir dir="${user.home}/.beast/2.7/${projName}"/>
+			<unzip src="${distExperimenter}/${fullName}.zip" dest="${user.home}/.beast/2.7/${projName}"/>
+	</target>
+
+	<target name="installMac" depends="package" if="isMac">
+	        <mkdir dir="${user.home}/.beast/2.7/${projName}"/>
+			<unzip src="${distExperimenter}/${fullName}.zip" dest="${user.home}/Library/Application Support/BEAST/2.7/${projName}"/>
+	</target>
+
+	<target name="installWindows" depends="package" if="isWindows">
+	        <mkdir dir="${user.home}/BEAST/2.7/${projName}"/>
+			<unzip src="${distExperimenter}/${fullName}.zip" dest="${user.home}/BEAST/2.7/${projName}"/>
+	</target>
+
+	<target name="install" depends="installWindows,installMac,installLinux">
+	</target>
+	
+
 
 </project>
