@@ -10,6 +10,10 @@
               class="beastvalidation.experimenter.CoverageCalculator"
               args=""
             />
+<packageapp description="CoverageCalculator"
+              class="beastvalidation.experimenter.CladeCoverageCalculator"
+              args=""
+            />
 <packageapp description="CoverageTestXMLGenerator2"
               class="beastvalidation.experimenter.CoverageTestXMLGenerator2"
               args=""
