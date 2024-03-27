@@ -65,6 +65,11 @@ public class CladeCoverageCalculator extends Runnable {
 
 	@Override
 	public void run() throws Exception {
+//		showCoveragePlot(new int[]{164, 13, 8, 16, 16, 15, 27, 23, 28, 22, 31, 33, 31, 42, 57, 44, 61, 97, 142, 4030}, 
+//				new int[]{1232, 224, 141, 107, 91, 89, 83, 89, 72, 64, 69, 84, 70, 76, 86, 74, 97, 119, 162, 4046}, 
+//				new File("/tmp/out.png"));
+//		Platform.exit();
+//		System.exit(0);
 
 		PrintStream out = System.out;
 		if (outputInput.get() != null && !outputInput.get().getName().equals("[[none]]")) {
@@ -84,6 +89,8 @@ public class CladeCoverageCalculator extends Runnable {
 		}
 
 		int i = 0;
+		int missedClades = 0;
+		int totalClades = 0;
 		while (trueTrees.hasNext()) {
 			Tree trueTree = trueTrees.next();
 
@@ -117,6 +124,7 @@ public class CladeCoverageCalculator extends Runnable {
 
 			for (BitSet bits : trueClades.getCladeMap().keySet()) {
 				Clade clade = clades.getCladeMap().get(bits);
+				totalClades++;
 				if (clade == null) {
 					StringBuilder b = new StringBuilder();
 					int taxonCount = trueTree.getLeafNodeCount();
@@ -129,6 +137,7 @@ public class CladeCoverageCalculator extends Runnable {
 					Log.warning(i + ":" + bits.cardinality() + " taxa clade not found: " + b.toString());
 					// put this in the zero probability bin
 					truebins[0]++;
+					missedClades++;
 				} else {
 					double p = clade.getCount() / treeCount;
 					int b = (int) (truebins.length * p);
@@ -143,14 +152,16 @@ public class CladeCoverageCalculator extends Runnable {
 		}
 
 		System.out.println();
-		System.out.println(Arrays.toString(totals));
-		System.out.println(Arrays.toString(truebins));
+		System.out.println("totals: " + Arrays.toString(totals));
+		System.out.println("true:   " + Arrays.toString(truebins));
+		System.out.print("percentage: ");
 		for (int x = 0; x < truebins.length; x++) {
 			System.out.print((double) truebins[x] / totals[x]);
 			if (x < truebins.length - 1) {
 				System.out.print(", ");
 			}
 		}
+		System.out.println("\n" + missedClades + " clades missed out of " + totalClades +" = " + (missedClades * 100.0 / totalClades) +"%");
 
 		if (outputInput.get() != null && !outputInput.get().getName().equals("[[none]]")) {
 			out.close();
@@ -186,7 +197,7 @@ public class CladeCoverageCalculator extends Runnable {
 
 			HBox root = new HBox();
 
-			Scene scene = new Scene(root, 480, 330);
+			Scene scene = new Scene(root, 60 * totals.length, 60 * totals.length);
 			CategoryAxis xAxis = new CategoryAxis();
 			xAxis.setLabel("Inferred");
 
@@ -198,6 +209,7 @@ public class CladeCoverageCalculator extends Runnable {
 
 			BarChart barChart = new BarChart(xAxis, yAxis);
 			barChart.setTitle("Clades true vs inferred ");
+			barChart.setPrefSize(60 * totals.length - 77, 60 * totals.length - 52);
 
 			XYChart.Series data = new XYChart.Series<String, Number>();
 
@@ -209,6 +221,7 @@ public class CladeCoverageCalculator extends Runnable {
 
 			barChart.getData().add(data);
 			barChart.setLegendVisible(false);
+			barChart.setVerticalGridLinesVisible(false);
 
 			root.getChildren().add(barChart);
 
@@ -218,8 +231,8 @@ public class CladeCoverageCalculator extends Runnable {
 			alert.setDialogPane(pane);
 			alert.setHeaderText("coverage");
 			alert.getDialogPane().getButtonTypes().addAll(Alert.CLOSED_OPTION);
-			pane.setPrefHeight(600);
-			pane.setPrefWidth(600);
+			pane.setPrefHeight(60 * totals.length);
+			pane.setPrefWidth(60 * totals.length);
 			alert.setResizable(true);
 			ThemeProvider.loadStyleSheet(alert.getDialogPane().getScene());
 
@@ -230,7 +243,7 @@ public class CladeCoverageCalculator extends Runnable {
 			try {
 				Graphics g = tempImg.getGraphics();
 				g.setColor(Color.black);
-				g.drawLine(77, 429, 490, 52);
+				g.drawLine(77,  60 * totals.length - (600-429), totals.length * 60 - (600-490), 52);
 				ImageIO.write(tempImg, "png", new FileOutputStream(pngfile));
 			} catch (IOException e) {
 				e.printStackTrace();
