@@ -394,16 +394,22 @@ public class CoverageCalculator extends Runnable {
 		// keep everything sticking out of graph hidden
 		svg.println("<g clip-path=\"url(#cut-off-graph)\">");
 
-		double min = estimates[0];
-		double max = estimates[0];
 		double minx = trueValues[map[0]];
 		double maxx = trueValues[map[0]];
 		for (int j = 0; j < estimates.length; j++) {
-			min = Math.min(min, lows[j]);
-			max = Math.max(max, upps[j]);
 			minx = Math.min(minx, trueValues[map[j]]);
 			maxx = Math.max(maxx, trueValues[map[j]]);
 		}
+		double min = estimates[0];
+		double max = estimates[0];
+		for (String label0 : truth.getLabels()) {
+			if (matches(label0, label)) {
+				min = Math.min(min(estimated, label0), min);
+				max = Math.max(max(estimated, label0), max);
+			}
+		}
+		min = rounddown(min, max-min);
+		max = roundup(max, max-min);
 		double range = max - min;
 		double rangex = maxx - minx;
 		double w = rangex / 100.0;
@@ -509,6 +515,66 @@ public class CoverageCalculator extends Runnable {
 		}
 		k++;
 		return k;
+	}
+
+	private double max(LogAnalyser estimated, String label0) {
+		Double [] upps = estimated.getTrace(label0+".95%HPDup");
+		double max = upps[0];
+		for (double d : upps) {
+			max = Math.max(max, d);
+		}		
+		return max;
+	}
+
+	private double min(LogAnalyser estimated, String label0) {
+		Double [] lows = estimated.getTrace(label0+".95%HPDlo");
+		double min = lows[0];
+		for (double d : lows) {
+			min = Math.min(min, d);
+		}
+		return min;
+	}
+
+	private boolean matches(String label0, String label) {
+		if (label0.equals(label)) {
+			return true;
+		}
+		if (label.matches(".*\\.[0-9]+$") && label0.matches(".*\\.[0-9]+$")) {
+			String str = label.substring(0, label.lastIndexOf("."));
+			String str0 = label0.substring(0, label0.lastIndexOf("."));
+			if (str0.equals(str)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private double roundup(double max, double range) {
+		if (range > 10) {
+			return max;
+		}
+		if (range > 1) {
+			max = ((int)(max+1));
+		} else if (range > 0.1) {
+			max = ((int)(max*10+1))/10.0;
+		} else {
+			max = ((int)(max*100+1))/100.0;
+		}
+		return max;
+	}
+
+	private double rounddown(double min, double range) {
+		if (range > 10) {
+			return min;
+		}
+		if (range > 1) {
+			min = ((int)(min-1));
+		} else if (range > 0.1) {
+			min = ((int)(min*10-1))/10.0;
+		} else {
+			min = ((int)(min*100-1))/100.0;
+		}
+		return min;
 	}
 
 	private String getType(String label) {
