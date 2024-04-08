@@ -152,7 +152,12 @@ public class SBCAnalyser extends Runnable {
 			PrintStream html, StringBuilder []html2, int binCount, int L, int pLow, int pUp, int pLow95, int pUp95, int pExp) 
 					throws IOException, MathException {
 		Double [] trueValues = truth.getTrace(label);
-		Double [] estimates = estimated.getTrace(label);
+		Double [] estimates = null;
+		try {
+			estimates = estimated.getTrace(label);
+		} catch (IndexOutOfBoundsException e) {
+			Log.warning("Label " + label + " not found in estimates");
+		}
 		if (estimates == null) {
 			Log.warning("Skipping " + label);
 		} else {

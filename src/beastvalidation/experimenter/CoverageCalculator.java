@@ -98,7 +98,7 @@ public class CoverageCalculator extends Runnable {
 		}
 		
 		
-		Log.info("posterior samples: " + logAnalyserFileInput.get().getPath() + " with " + n + " runs so coverage should be from " + hpd[0] + " to " + hpd[1] +"</li>");
+		Log.info("posterior samples: " + logAnalyserFileInput.get().getPath() + " with " + n + " runs so coverage should be from " + hpd[0] + " to " + hpd[1]);
 		Log.info(space + "coverage  Mean ESS\tMin ESS\tmissmatches");
 
 		
@@ -111,7 +111,7 @@ public class CoverageCalculator extends Runnable {
 		
 		int [] map = guessFileOrder(estimated, skip);
 
-		calcStats(truth, estimated, coverage, meanOver_, meanESS_, minESS_, invalidESSReported_, map, covered_);
+		calcStats(truth, estimated, coverage, meanOver_, meanESS_, minESS_, invalidESSReported_, map, covered_, hpd);
 
 
 		if (outputInput.get() != null) {
@@ -136,6 +136,7 @@ public class CoverageCalculator extends Runnable {
 			html.println("</table>\n" +
 					(showESSInput.get()?
 					"</p><p>* marked ESSs indicate one or more ESS estimates are invalid. Unmarked ESSs indicate all estimates are valid.</p>":"")
+					+ "<p>working directory: " + System.getProperty("user.dir")+ "</p>"
 					+ "</body>\n</html>");
 			html.close();
 			
@@ -189,7 +190,7 @@ public class CoverageCalculator extends Runnable {
 
 	private void calcStats(LogAnalyser truth, LogAnalyser estimated,
 			int[] coverage, int[] meanOver_, double[] meanESS_, double[] minESS_, boolean[] invalidESSReported_,
-			int [] map, String[]covered_) throws IOException {
+			int [] map, String[]covered_, int[] hpd) throws IOException {
 		
 		for (int i = 0; i < truth.getLabels().size(); i++) {
 			String label = truth.getLabels().get(i);
@@ -279,7 +280,7 @@ public class CoverageCalculator extends Runnable {
 					covered_[i] = coveredString;
 					invalidESSReported_[i] = invalidESSReported;
 					Log.info(label + (label.length() < space.length() ? space.substring(label.length()) : " ") + 
-							formatter2.format(covered) + "\t   " + 
+							formatter2.format(covered) + (covered < hpd[0] || covered > hpd[1] ? "*":"") + "\t   " + 
 							formatter.format(meanESS) + "\t" + formatter.format(minESS) + "\t" + coveredString + " " + missmatchIDS);
 				}
 			} catch (ArrayIndexOutOfBoundsException e) {
@@ -518,21 +519,29 @@ public class CoverageCalculator extends Runnable {
 	}
 
 	private double max(LogAnalyser estimated, String label0) {
-		Double [] upps = estimated.getTrace(label0+".95%HPDup");
-		double max = upps[0];
-		for (double d : upps) {
-			max = Math.max(max, d);
-		}		
-		return max;
+		try {
+			Double [] upps = estimated.getTrace(label0+".95%HPDup");
+			double max = upps[0];
+			for (double d : upps) {
+				max = Math.max(max, d);
+			}		
+			return max;
+		} catch (ArrayIndexOutOfBoundsException e) {
+			return Double.NEGATIVE_INFINITY;
+		}
 	}
 
 	private double min(LogAnalyser estimated, String label0) {
-		Double [] lows = estimated.getTrace(label0+".95%HPDlo");
-		double min = lows[0];
-		for (double d : lows) {
-			min = Math.min(min, d);
+		try {
+			Double [] lows = estimated.getTrace(label0+".95%HPDlo");
+			double min = lows[0];
+			for (double d : lows) {
+				min = Math.min(min, d);
+			}
+			return min;
+		} catch (ArrayIndexOutOfBoundsException e) {
+			return Double.POSITIVE_INFINITY;
 		}
-		return min;
 	}
 
 	private boolean matches(String label0, String label) {
