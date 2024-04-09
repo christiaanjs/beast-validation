@@ -40,6 +40,8 @@ public class CoverageCalculator extends Runnable {
 			+ "Items that are not specified are considered to be of type double");
 	final public Input<Boolean> guessFileOrderInput = new Input<>("guessFileOrder", "guess order of entries in logAnalyser file based on file name, otherwise assume order is the same as in log-file with actual values", true);
 	final public Input<Boolean> showESSInput = new Input<>("showESS", "show information about ESSs", true);
+	final public Input<Boolean> showRhoInput = new Input<>("showRho", "show information about correlation (rho)", false);
+	final public Input<Boolean> showMeanInput = new Input<>("showMean", "show how many means are below the true value", true);
 	final public Input<String> excludeInput = new Input<>("exclude", "comma separated list of entries to exclude from the analysis", "");
 			
 	
@@ -469,6 +471,11 @@ public class CoverageCalculator extends Runnable {
 			// x == y line
 			svg.println("<line x1='"+minx+"' y1='"+minx+"' x2=\""+maxx+"\" y2=\""+maxx+"\" style=\"fill:none;stroke-width:"+w/3+";stroke:rgb(0,0,0)\"/>");
 
+			// regression line
+			if (showRhoInput.get()) {
+				drawRegressionLine(svg, trueValues, estimates, map, minx, maxx, w);
+			}
+			
 			for (int j = 0; j < estimates.length; j++) {
 				double y = lows[j];
 				double h = upps[j] - lows[j];
@@ -504,10 +511,12 @@ public class CoverageCalculator extends Runnable {
 		html.println("<td>");
 		html.println("<h3>" + label + "</h3>");
 		html.println("<p>Coverage: " + coverage[i] + 
-				" Mean: "  + meanOver_[i] + 
+				(showMeanInput.get()? " Mean: "  + meanOver_[i]: "") + 
 				(showESSInput.get()?
 				" ESS (mean/min): " + formatter2.format(meanESS_[i]) + 
 				"/" + formatter2.format(minESS_[i]) + (invalidESSReported_[i] ? "*" : ""):"")
+				+ (showRhoInput.get()?
+				", y = " + corr(trueValues, estimates, map) : "") + ")" 
 				+ "</p><p>");
 		html.println("<img width=\"350px\" src=\"" + cleanLabel + ".svg\">");
 		html.println("</td>");
@@ -516,6 +525,40 @@ public class CoverageCalculator extends Runnable {
 		}
 		k++;
 		return k;
+	}
+
+	
+	private void drawRegressionLine(PrintStream svg, Double[] trueValues, Double[] estimates, int[] map, double minx, double maxx, double w) {
+		int n = estimates.length;
+		double [] x = new double[n];
+		double [] y = new double[n];
+		for (int i = 0; i < n; i++) {
+			x[i] = trueValues[map[i]];
+			y[i] = estimates[i];
+		}
+		
+		Regression r2 = new Regression(x, y);
+		double intercept = r2.getIntercept();
+		double gradient = r2.getGradient();
+		double y1 = intercept + minx * gradient;
+		double y2 = intercept + maxx * gradient;
+		
+		svg.println("<line x1='"+minx+"' y1='"+y1+"' x2=\""+maxx+"\" y2=\""+y2+"\" style=\"fill:none;stroke-width:"+w/3+";stroke:#c0c0c0\"/>");
+		
+	}
+
+	private String corr(Double[] trueValues, Double[] estimates, int[] map) {
+		int n = estimates.length;
+		double [] x = new double[n];
+		double [] y = new double[n];
+		for (int i = 0; i < n; i++) {
+			x[i] = trueValues[map[i]];
+			y[i] = estimates[i];
+		}
+		
+		Regression r2 = new Regression(x, y);
+		String str = r2.toString();
+		return " " + str;
 	}
 
 	private double max(LogAnalyser estimated, String label0) {
