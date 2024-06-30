@@ -29,7 +29,7 @@ public class CoverageCalculator extends Runnable {
 	final public Input<File> logFileInput = new Input<>("log", "log file containing actual values", Validate.REQUIRED);
 	final public Input<Integer> skipLogLinesInput = new Input<>("skip", "numer of log file lines to skip", 1);
 	final public Input<File> logAnalyserFileInput = new Input<>("logAnalyser", "file produced by loganalyser tool using the -oneline option, containing estimated values", Validate.REQUIRED);
-	final public Input<OutFile> outputInput = new Input<>("out", "output directory for tsv files with truth and mean estimates. Not produced if not specified -- directory is also used to generate svg bargraphs and html report");
+	final public Input<OutFile> outputInput = new Input<>("out", "output directory for tsv files with truth and mean/median estimates. Not produced if not specified -- directory is also used to generate svg bargraphs and html report");
 	final public Input<File> typesInput = new Input<>("typeFile", "if specified, the type file is a tab delimited file with first column containing entry names as they appear in the trace log file, and second column "
 			+ "variable type, d for double, b for binary, c for categorical, for example:\n"
 			+ "variable\ttype\n"
@@ -41,8 +41,11 @@ public class CoverageCalculator extends Runnable {
 	final public Input<Boolean> guessFileOrderInput = new Input<>("guessFileOrder", "guess order of entries in logAnalyser file based on file name, otherwise assume order is the same as in log-file with actual values", true);
 	final public Input<Boolean> showESSInput = new Input<>("showESS", "show information about ESSs", true);
 	final public Input<Boolean> showRhoInput = new Input<>("showRho", "show information about correlation (rho)", false);
-	final public Input<Boolean> showMeanInput = new Input<>("showMean", "show how many means are below the true value", true);
+	final public Input<Boolean> showMeanInput = new Input<>("showMean", "show how many means/medians are below the true value", true);
+	final public Input<Boolean> useMeanInput = new Input<>("useMean", "use mean instead of median for estimates", false);
 	final public Input<String> excludeInput = new Input<>("exclude", "comma separated list of entries to exclude from the analysis", "");
+
+	final public Input<Integer> columnsInput = new Input<>("columns", "numer of columns in HTML output", 4);
 			
 	
 	final static String space = "                                                ";
@@ -364,7 +367,7 @@ public class CoverageCalculator extends Runnable {
 			int [] map
 			) throws IOException {
 		Double [] trueValues = truth.getTrace(label);
-		Double [] estimates = estimated.getTrace(label+".mean");
+		Double [] estimates = estimated.getTrace(label+ (useMeanInput.get()?".mean":".median"));
 		Double [] lows = estimated.getTrace(label+".95%HPDlo");
 		Double [] upps = estimated.getTrace(label+".95%HPDup");
 		// out.print(trueValues[skip + k] + "\t" + estimates[k] + "\t");
@@ -505,13 +508,13 @@ public class CoverageCalculator extends Runnable {
 		svg.println("</svg>");
 		svg.close();
 		
-		if (k % 4 == 0) {
+		if (k % columnsInput.get() == 0) {
 			html.println("<tr>");						
 		}
 		html.println("<td>");
 		html.println("<h3>" + label + "</h3>");
 		html.println("<p>Coverage: " + coverage[i] + 
-				(showMeanInput.get()? " Mean: "  + meanOver_[i]: "") + 
+				(showMeanInput.get()? (useMeanInput.get()? " Mean: ": " Median: ")  + meanOver_[i]: "") + 
 				(showESSInput.get()?
 				" ESS (mean/min): " + formatter2.format(meanESS_[i]) + 
 				"/" + formatter2.format(minESS_[i]) + (invalidESSReported_[i] ? "*" : ""):"")
@@ -520,7 +523,7 @@ public class CoverageCalculator extends Runnable {
 				+ "</p><p>");
 		html.println("<img width=\"350px\" src=\"" + cleanLabel + ".svg\">");
 		html.println("</td>");
-		if ((k+1) % 4 == 0) {
+		if ((k+1) % columnsInput.get() == 0) {
 			html.println("</tr>");
 		}
 		k++;

@@ -44,7 +44,7 @@ import javafx.scene.layout.HBox;
 
 @Description("Calculate coverage of clade probabilities")
 public class CladeCoverageCalculator extends Runnable {
-	public Input<TreeFile> truthInput = new Input<>("truth", "trace file with true infection information",
+	public Input<TreeFile> truthInput = new Input<>("truth", "tree file with true clade information",
 			Validate.REQUIRED);
 	public Input<File> logFilePrefixInput = new Input<>("prefix",
 			"log file name without the number and '.log' missing. It is assumed there are as many log files as there are entries in the truth file",
