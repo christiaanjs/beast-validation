@@ -120,7 +120,7 @@ public class CoverageCalculator extends Runnable {
 
 
 		if (outputInput.get() != null) {
-			formatter = new DecimalFormat("#0.0000");
+			formatter = new DecimalFormat("#0.####");
 			int k = 0;
         	for (int i = 0; i < truth.getLabels().size(); i++) {
     			String label = truth.getLabels().get(i);
@@ -416,6 +416,8 @@ public class CoverageCalculator extends Runnable {
 		}
 		min = rounddown(min, max-min);
 		max = roundup(max, max-min);
+		minx = rounddown(minx, maxx-minx);
+		maxx = roundup(maxx, maxx-minx);
 		double range = max - min;
 		double rangex = maxx - minx;
 		double w = rangex / 100.0;
@@ -496,10 +498,14 @@ public class CoverageCalculator extends Runnable {
 			}
 			svg.println("</g>");
 			svg.println("</g>");
-			svg.println("<text x='0' y='0' transform='rotate(90 0 0) translate(0,-1025)' style='font-size:46px'>" + formatter.format(max) + "</text>");
-			svg.println("<text x='0' y='0' transform='rotate(90 0 0) translate(600,-1025)' style='font-size:46px'>" + formatter.format(min) + "</text>");
-			svg.println("<text x='10' y='735' style='font-size:46px'>" + formatter.format(minx) + "</text>");
-			svg.println("<text x='870' y='735' style='font-size:46px'>" + formatter.format(maxx) + "</text>");
+			String fmax = format(max);
+			String fmin = format(min);
+			String fmaxx = format(maxx);
+			String fminx = format(minx);
+			svg.println("<text x='0' y='0' transform='rotate(90 0 0) translate(0,-1025)' style='font-size:46px'>" + fmax + "</text>");
+			svg.println("<text x='0' y='0' transform='rotate(90 0 0) translate(" + (700 - 20*fmin.length()) + ",-1025)' style='font-size:46px'>" + fmin + "</text>");
+			svg.println("<text x='10' y='735' style='font-size:46px'>" + fminx + "</text>");
+			svg.println("<text x='" + (1000 - 20 * fmaxx.length()) + "' y='735' style='font-size:46px'>" + fmaxx + "</text>");
 			break;
 		}
 		default:
@@ -531,6 +537,11 @@ public class CoverageCalculator extends Runnable {
 	}
 
 	
+	private String format(double value) {
+		String str = formatter.format(value);
+		return str;
+	}
+
 	private void drawRegressionLine(PrintStream svg, Double[] trueValues, Double[] estimates, int[] map, double minx, double maxx, double w) {
 		int n = estimates.length;
 		double [] x = new double[n];
@@ -605,9 +616,6 @@ public class CoverageCalculator extends Runnable {
 	}
 
 	private double roundup(double max, double range) {
-		if (range > 10) {
-			return max;
-		}
 		if (range > 1) {
 			max = ((int)(max+1));
 		} else if (range > 0.1) {
@@ -619,15 +627,12 @@ public class CoverageCalculator extends Runnable {
 	}
 
 	private double rounddown(double min, double range) {
-		if (range > 10) {
-			return min;
-		}
 		if (range > 1) {
-			min = ((int)(min-1));
+			min = ((int)(min));
 		} else if (range > 0.1) {
-			min = ((int)(min*10-1))/10.0;
+			min = ((int)(min*10))/10.0;
 		} else {
-			min = ((int)(min*100-1))/100.0;
+			min = ((int)(min*100))/100.0;
 		}
 		return min;
 	}
