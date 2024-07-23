@@ -46,12 +46,14 @@ public class CoverageCalculator extends Runnable {
 	final public Input<String> excludeInput = new Input<>("exclude", "comma separated list of entries to exclude from the analysis", "");
 
 	final public Input<Integer> columnsInput = new Input<>("columns", "numer of columns in HTML output", 4);
+	final public Input<Double> epsilonInput = new Input<>("epsilon", "accuracy used for 95%HPD interval coverage -- specify if there are intervals of zero size", 0.0);
 			
 	
 	final static String space = "                                                ";
 	NumberFormat formatter = new DecimalFormat("#0.00");
 	NumberFormat formatter2 = new DecimalFormat("#0");
 	Set<String> exclude;
+	private double epsilon;
 
 	Map<String, String> typeMap;
 	@Override
@@ -69,6 +71,8 @@ public class CoverageCalculator extends Runnable {
 		exclude.add("posterior");
 		exclude.add("prior");
 		exclude.add("likelihood");
+		
+		epsilon = epsilonInput.get();
 
 		typeMap = processTypes();
 		
@@ -251,7 +255,7 @@ public class CoverageCalculator extends Runnable {
 					case "c":
 						// real valued trait
 						for (int j = 0; j < meanValues.length && map[j] < trueValues.length; j++) {
-							if (lows[j] <= trueValues[map[j]] && trueValues[map[j]] <= upps[j]) {
+							if (lows[j]-epsilon <= trueValues[map[j]] && trueValues[map[j]] <= upps[j]+epsilon) {
 								covered++;
 								// System.out.println(lows[j] +"<=" + trueValues[j + skip] +"&&" + trueValues[j + skip] +" <=" + upps[j]);
 								coveredString += ".";
