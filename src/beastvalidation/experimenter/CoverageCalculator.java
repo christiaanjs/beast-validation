@@ -48,6 +48,7 @@ public class CoverageCalculator extends Runnable {
 	final public Input<Integer> columnsInput = new Input<>("columns", "numer of columns in HTML output", 4);
 	final public Input<Double> epsilonInput = new Input<>("epsilon", "accuracy used for 95%HPD interval coverage -- specify if there are intervals of zero size", 0.0);
 			
+	final public Input<Boolean> verboseInput = new Input<>("verbose", "verbose identification of mismatches", false);
 	
 	final static String space = "                                                ";
 	NumberFormat formatter = new DecimalFormat("#0.00");
@@ -71,6 +72,7 @@ public class CoverageCalculator extends Runnable {
 		exclude.add("posterior");
 		exclude.add("prior");
 		exclude.add("likelihood");
+		exclude.add("treeLikelihood");
 		
 		epsilon = epsilonInput.get();
 
@@ -201,8 +203,10 @@ public class CoverageCalculator extends Runnable {
 			int[] coverage, int[] meanOver_, double[] meanESS_, double[] minESS_, boolean[] invalidESSReported_,
 			int [] map, String[]covered_, int[] hpd) throws IOException {
 		
+		StringBuilder missmatchReport = new StringBuilder();
 		for (int i = 0; i < truth.getLabels().size(); i++) {
 			String label = truth.getLabels().get(i);
+			if (!exclude.contains(label)) {
 			try {
 				Double [] trueValues = truth.getTrace(label);
 				Double [] meanValues = estimated.getTrace(label+".mean");
@@ -229,6 +233,8 @@ public class CoverageCalculator extends Runnable {
 								} else {
 									coveredString += "x";
 									missmatchIDS += map[j] + " ";
+									String file = estimated.m_ranges[1].get((int)(double)estimated.getTrace("filename")[j]);
+									missmatchReport.append(label+ " " + file + " was " + meanValues[j] + " expected >= 0.95\n");
 								}
 							} else {
 								if (meanValues[j] > 0.05) {
@@ -237,6 +243,8 @@ public class CoverageCalculator extends Runnable {
 								} else {
 									coveredString += "x";
 									missmatchIDS += map[j] + " ";
+									String file = estimated.m_ranges[1].get((int)(double)estimated.getTrace("filename")[j]);
+									missmatchReport.append(label+ " " + file + " was " + meanValues[j] + " expected <= 0.05\n");
 								}
 							}
 							if (!Double.isNaN(ess[j])) {
@@ -262,6 +270,8 @@ public class CoverageCalculator extends Runnable {
 							} else {
 								coveredString += "x";
 								missmatchIDS += map[j] + " ";
+								String file = estimated.m_ranges[1].get((int)(double)estimated.getTrace("filename")[j]);
+								missmatchReport.append(label+ " " + file + " was [" + lows[j] + "," + upps[j] + "] expected " + trueValues[map[j]]+ "\n");
 							}
 							if (trueValues[map[j]] > meanValues[j]) {
 								meanOver++;
@@ -296,6 +306,10 @@ public class CoverageCalculator extends Runnable {
 				// we get here if some item in the true log is not available in the summary log
 				Log.err("Skipping " + label);
 			}
+			}
+		}
+		if (verboseInput.get()) {
+			Log.info(missmatchReport.toString());
 		}
 	}
 
@@ -461,7 +475,7 @@ public class CoverageCalculator extends Runnable {
 						fill = "#fa5753";
 					}
 				}
-				svg.println("  <rect x=\""+x+"\" y=\"" + y+ "\" width=\""+(1000/bins.length)+"\" height=\""+h+"\" style=\"fill:" + fill + ";stroke-width:1;stroke:#8b3d37;opacity:0.5\"/>");
+				svg.println("<rect x=\""+x+"\" y=\"" + y+ "\" width=\""+(1000/bins.length)+"\" height=\""+h+"\" style=\"fill:" + fill + ";stroke-width:1;stroke:#8b3d37;opacity:0.5\"/>");
 			}
 			svg.println("</g>");
 			svg.println("</g>");
@@ -489,10 +503,10 @@ public class CoverageCalculator extends Runnable {
 				double y = lows[j];
 				double h = upps[j] - lows[j];
 				double x = trueValues[map[j]]; 
-				if (lows[j] <= trueValues[map[j]] && trueValues[map[j]] <= upps[j]) {
-					svg.println("  <rect x=\""+x+"\" y=\"" + y+ "\" width=\""+w+"\" height=\""+h+"\" style=\"fill:#5099ff;stroke-width:"+ w/10+";stroke:#8b3d37;opacity:0.5\"/>");
+				if (lows[j] - epsilon <= trueValues[map[j]] && trueValues[map[j]] <= upps[j] + epsilon) {
+					svg.println("<rect x=\""+x+"\" y=\"" + y+ "\" width=\""+w+"\" height=\""+h+"\" style=\"fill:#5099ff;stroke-width:"+ w/10+";stroke:#8b3d37;opacity:0.5\"/>");
 				} else {
-					svg.println("  <rect x=\""+x+"\" y=\"" + y+ "\" width=\""+w+"\" height=\""+h+"\" style=\"fill:#fa5753;stroke-width:"+ w/10+";stroke:#373d8b;opacity:0.85\"/>");
+					svg.println("<rect x=\""+x+"\" y=\"" + y+ "\" width=\""+w+"\" height=\""+h+"\" style=\"fill:#fa5753;stroke-width:"+ w/10+";stroke:#373d8b;opacity:0.85\"/>");
 				}
 			}
 			for (int j = 0; j < estimates.length; j++) {
@@ -529,7 +543,7 @@ public class CoverageCalculator extends Runnable {
 				" ESS (mean/min): " + formatter2.format(meanESS_[i]) + 
 				"/" + formatter2.format(minESS_[i]) + (invalidESSReported_[i] ? "*" : ""):"")
 				+ (showRhoInput.get()?
-				", y = " + corr(trueValues, estimates, map) : "") + ")" 
+				", y = " + corr(trueValues, estimates, map) + ")" : "")  
 				+ "</p><p>");
 		html.println("<img width=\"350px\" src=\"" + cleanLabel + ".svg\">");
 		html.println("</td>");

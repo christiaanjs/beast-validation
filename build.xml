@@ -36,6 +36,7 @@
         <fileset dir="${libBeast2}" includes="beagle.jar"/>
         <fileset dir="${libBeast2}" includes="jam.jar"/>
         <fileset dir="${libBeast2}" includes="colt.jar"/>
+        <fileset dir="${libBeast2}/junit" includes="junit-platform-console-standalone-1.8.2.jar"/>
         <pathelement path="${beast2classpath}"/>
         <pathelement path="${beastapp2classpath}"/>        
         <pathelement path="${BEASTLabsclasspath}"/>
