@@ -49,6 +49,7 @@ public class CoverageCalculator extends Runnable {
 	final public Input<Double> epsilonInput = new Input<>("epsilon", "accuracy used for 95%HPD interval coverage -- specify if there are intervals of zero size", 0.0);
 			
 	final public Input<Boolean> verboseInput = new Input<>("verbose", "verbose identification of mismatches", false);
+	final public Input<String> htmlTitleLabelInput = new Input<>("label", "label for html title (only used if html is generated, for which 'out' needs to be specified)");
 	
 	final static String space = "                                                ";
 	NumberFormat formatter = new DecimalFormat("#0.00");
@@ -87,6 +88,13 @@ public class CoverageCalculator extends Runnable {
 		PrintStream html = null;
 		File svgdir = null;
 		if (outputInput.get() != null && !outputInput.get().getName().equals("[[none]]")) {
+			String label = htmlTitleLabelInput.get() == null ? "" : htmlTitleLabelInput.get();
+			if (System.getProperty("coveragelabel") != null) {
+				label = " " + System.getProperty("coveragelabel");
+			} 
+			if (System.getenv("COVERAGE_LABEL") != null) {
+				label = " " + System.getenv("COVERAGE_LABEL");
+			}
 			svgdir = outputInput.get();
 			if (!svgdir.isDirectory()) {
 				svgdir = svgdir.getParentFile();
@@ -95,9 +103,9 @@ public class CoverageCalculator extends Runnable {
 			html = new PrintStream(svgdir.getPath()+"/coverage.html");
 			html.println("<!doctype html>\n"+
 					"<html>\n"+
-					"<head><title>Coverage calculations</title></head>\n"+
+					"<head><title>Coverage calculations" + label + "</title></head>\n"+
 					"<body>\n");
-			html.println("<h2>Coverage calculations</h2>");
+			html.println("<h2>Coverage calculations" + label + "</h2>");
 			html.println("<li>prior sample: " + logFileInput.get().getPath()+"</li>");
 			html.println("<li>posterior samples: " + logAnalyserFileInput.get().getPath() + " with " + n + " runs so coverage should be from " + hpd[0] + " to " + hpd[1] +"</li>");
 			html.println("<table>");
