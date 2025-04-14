@@ -40,6 +40,10 @@ public class SBCAnalyser extends Runnable {
 
 	final public Input<String> excludeInput = new Input<>("exclude", "comma separated list of entries to exclude from the analysis", "");
 
+	final public Input<String> htmlTitleLabelInput = new Input<>("label", "label for html title (only used if html is generated, for which "
+			+ "'out' needs to be specified). Can also be set by the COVERAGE_LABEL environment variable or the `coveragelabel` java directive "
+			+ "(through java -d coveragelabel=MyLabel)");
+
 	
 	@Override
 	public void initAndValidate() {
@@ -62,6 +66,13 @@ public class SBCAnalyser extends Runnable {
 		File svgdir = null;
 		PrintStream html = null;
 		if (outputInput.get() != null && !outputInput.get().getName().equals("[[none]]")) {
+			String label = htmlTitleLabelInput.get() == null ? "" : htmlTitleLabelInput.get();
+			if (System.getProperty("coveragelabel") != null) {
+				label = " " + System.getProperty("coveragelabel");
+			} 
+			if (System.getenv("COVERAGE_LABEL") != null) {
+				label = " " + System.getenv("COVERAGE_LABEL");
+			}
 			svgdir = outputInput.get();
 			if (!svgdir.isDirectory()) {
 				throw new IllegalArgumentException(svgdir.getPath() + " is not a directory. Specify an existing directory for outputDir");
@@ -69,9 +80,9 @@ public class SBCAnalyser extends Runnable {
 			html = new PrintStream(svgdir.getPath()+"/SBC.html");
 			html.println("<!doctype html>\n"+
 					"<html>\n"+
-					"<head><title>Simulation Based Calibration</title></head>\n"+
+					"<head><title>Simulation Based Calibration" + label + "</title></head>\n"+
 					"<body>\n");
-			html.println("<h2>Simulation Based Calibration</h2>");
+			html.println("<h2>Simulation Based Calibration" + label + "</h2>");
 			html.println("<li>prior sample: " + logFileInput.get().getPath()+"</li>");
 			html.println("<li>posterior samples: " + logAnalyserFileInput.get().getPath()+"</li>");
 			html.println("<li>Use "+ (useRankedBinsInput.get() ? "ranking" : "empirical bins") + " for bins</li>");
