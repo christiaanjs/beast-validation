@@ -49,7 +49,9 @@ public class CoverageCalculator extends Runnable {
 	final public Input<Double> epsilonInput = new Input<>("epsilon", "accuracy used for 95%HPD interval coverage -- specify if there are intervals of zero size", 0.0);
 			
 	final public Input<Boolean> verboseInput = new Input<>("verbose", "verbose identification of mismatches", false);
-	final public Input<String> htmlTitleLabelInput = new Input<>("label", "label for html title (only used if html is generated, for which 'out' needs to be specified)");
+	final public Input<String> htmlTitleLabelInput = new Input<>("label", "label for html title (only used if html is generated, for which "
+			+ "'out' needs to be specified). Can also be set by the COVERAGE_LABEL environment variable or the `coveragelabel` java directive "
+			+ "(through java -d coveragelabel=MyLabel)");
 	
 	final static String space = "                                                ";
 	NumberFormat formatter = new DecimalFormat("#0.00");
