@@ -14,8 +14,7 @@
 	<property name="libExperimenter" location="${experimenter}/lib" />
 	<property name="release_dir" value="${experimenter}/release" />
 	<property name="distExperimenter" location="${buildExperimenter}/dist" />
-	<property name="MASTERclasspath" location="../BEASTLabs/build" />
-	<property name="BEASTLabsclasspath" location="../MASTER/build" />
+	<property name="BEASTLabsclasspath" location="../BEASTLabs/build" />
 	<property name="beast2path" location="../beast2" />
 	<property name="libBeast2" location="${beast2path}/lib" />
 	<property name="srcBeast2" location="${beast2path}/src" />
@@ -40,7 +39,6 @@
         <pathelement path="${beast2classpath}"/>
         <pathelement path="${beastapp2classpath}"/>        
         <pathelement path="${BEASTLabsclasspath}"/>
-        <pathelement path="${MASTERclasspath}"/>
 	</path>
 
 	<!-- start -->
