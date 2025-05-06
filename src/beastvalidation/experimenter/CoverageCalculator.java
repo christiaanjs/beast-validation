@@ -88,7 +88,7 @@ public class CoverageCalculator extends Runnable {
 		int [] hpd = get95PercentBinomialHPD(n);
 
 		PrintStream html = null;
-		File svgdir = null;
+		File outdir = null;
 		if (outputInput.get() != null && !outputInput.get().getName().equals("[[none]]")) {
 			String label = htmlTitleLabelInput.get() == null ? "" : htmlTitleLabelInput.get();
 			if (System.getProperty("coveragelabel") != null) {
@@ -97,12 +97,17 @@ public class CoverageCalculator extends Runnable {
 			if (System.getenv("COVERAGE_LABEL") != null) {
 				label = " " + System.getenv("COVERAGE_LABEL");
 			}
-			svgdir = outputInput.get();
-			if (!svgdir.isDirectory()) {
-				svgdir = svgdir.getParentFile();
+			outdir = outputInput.get();
+
+			if (!outdir.exists()) {
+				boolean success = outdir.mkdirs();
+				if (!success) {
+					Log.err("Failed to create directory " + outdir);
+				}
 			}
-			Log.warning("Writing to file " + svgdir.getPath()+"/coverage.html");
-			html = new PrintStream(svgdir.getPath()+"/coverage.html");
+
+			Log.warning("Writing to file " + outdir.getPath()+"/coverage.html");
+			html = new PrintStream(outdir.getPath()+"/coverage.html");
 			html.println("<!doctype html>\n"+
 					"<html>\n"+
 					"<head><title>Coverage calculations" + label + "</title></head>\n"+
@@ -143,7 +148,7 @@ public class CoverageCalculator extends Runnable {
     			try {
     				if (!(exclude.contains(label) ||
     						Double.isNaN(truth.getTrace(i+1)[0]) || Double.isNaN(meanESS_[i]))) {
-    					output(i, k, label, truth, estimated, svgdir, html,
+    					output(i, k, label, truth, estimated, outdir, html,
     							coverage, meanOver_, meanESS_, minESS_, invalidESSReported_,
     							map);
     					k++;
@@ -162,10 +167,10 @@ public class CoverageCalculator extends Runnable {
 			html.close();
 
 			try {
-				Application.openUrl("file://" + svgdir.getPath()+"/coverage.html");
+				Application.openUrl("file://" + outdir.getAbsolutePath() + "/coverage.html");
 			} catch (IOException e) {
 				e.printStackTrace();
-				Log.warning("Output in " + svgdir.getPath()+"/coverage.html");
+				Log.warning("Output in " + outdir.getPath()+"/coverage.html");
 			}
 		}
 
