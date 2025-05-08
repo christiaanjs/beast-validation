@@ -37,7 +37,7 @@
         <fileset dir="${libBeast2}" includes="colt.jar"/>
         <fileset dir="${libBeast2}/junit" includes="junit-platform-console-standalone-1.8.2.jar"/>
         <pathelement path="${beast2classpath}"/>
-        <pathelement path="${beastapp2classpath}"/>        
+        <pathelement path="${beastapp2classpath}"/>
         <pathelement path="${BEASTLabsclasspath}"/>
 	</path>
 
@@ -199,22 +199,13 @@
 		<copy todir="${Add_on_dir}">
 			<fileset file="version.xml"/>
 		</copy>
-		<!--
-		<copy todir="${Add_on_dir}/examples">
-			<fileset dir="examples" />
-		</copy>
-		-->
+
 		<copy todir="${Add_on_dir}/lib">
 			<fileset dir="${distExperimenter}" includes="Experimenter.package.jar" />
 		</copy>
 		<copy todir="${Add_on_dir}">
 			<fileset dir="${distExperimenter}" includes="Experimenter.src.jar" />
 		</copy>
-		<!--
-		<copy todir="${Add_on_dir}/templates">
-			<fileset file="templates/methods.csv" />
-		</copy>
-		-->
 
 		<jar jarfile="${distExperimenter}/Experimenter.package.v${experimenterversion}.zip">
 			<fileset dir="${Add_on_dir}">
@@ -246,7 +237,7 @@
 
 	<target name="install" depends="installWindows,installMac,installLinux">
 	</target>
-	
+
 
 
 </project>

@@ -2,15 +2,12 @@
 	<depends on='BEAST.base' atleast='2.7.0'/>
 	<depends on='BEAST.app' atleast='2.7.0'/>
 	<depends on='BEASTLabs' atleast='2.0.0'/>
-	<!--
-	<depends on='MASTER' atleast='5.0.0'/>
-	-->
 
 <packageapp description="CoverageCalculator"
               class="beastvalidation.experimenter.CoverageCalculator"
               args=""
             />
-<packageapp description="CoverageCalculator"
+<packageapp description="CladeCoverageCalculator"
               class="beastvalidation.experimenter.CladeCoverageCalculator"
               args=""
             />
@@ -22,7 +19,7 @@
               class="beastvalidation.experimenter.TraceKSStats"
               args=""
             />
-            
+
 <packageapp description="SBCAnalyser"
               class="beastvalidation.experimenter.SBCAnalyser"
               args=""
