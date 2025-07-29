@@ -1,6 +1,7 @@
 package beastvalidation.experimenter;
 
 
+import java.awt.*;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -29,7 +30,7 @@ public class CoverageCalculator extends Runnable {
 	final public Input<File> logFileInput = new Input<>("log", "log file containing actual values", Validate.REQUIRED);
 	final public Input<Integer> skipLogLinesInput = new Input<>("skip", "numer of log file lines to skip", 1);
 	final public Input<File> logAnalyserFileInput = new Input<>("logAnalyser", "file produced by loganalyser tool using the -oneline option, containing estimated values", Validate.REQUIRED);
-	final public Input<OutFile> outputInput = new Input<>("out", "output directory for tsv files with truth and mean/median estimates. Not produced if not specified -- directory is also used to generate svg bargraphs and html report");
+	final public Input<OutFile> outputInput = new Input<>("out", "output directory for html report, svg figures and tsv data files with truth and mean/median estimates. Not produced if not specified.");
 	final public Input<File> typesInput = new Input<>("typeFile", "if specified, the type file is a tab delimited file with first column containing entry names as they appear in the trace log file, and second column "
 			+ "variable type, d for double, b for binary, c for categorical, for example:\n"
 			+ "variable\ttype\n"
@@ -100,9 +101,16 @@ public class CoverageCalculator extends Runnable {
 			outdir = outputInput.get();
 
 			if (!outdir.exists()) {
-				boolean success = outdir.mkdirs();
-				if (!success) {
+				if (!outdir.exists() && !outdir.mkdirs()) {
 					Log.err("Failed to create directory " + outdir);
+				}
+
+				// Create subdirectories: data and figs
+				for (String sub : new String[] {"data", "figs"}) {
+					File subdir = new File(outdir, sub);
+					if (!subdir.exists() && !subdir.mkdirs()) {
+						Log.err("Failed to create subdirectory " + subdir);
+					}
 				}
 			}
 
@@ -166,11 +174,15 @@ public class CoverageCalculator extends Runnable {
 					+ "</body>\n</html>");
 			html.close();
 
-			try {
-				Application.openUrl("file://" + outdir.getAbsolutePath() + "/coverage.html");
-			} catch (IOException e) {
-				e.printStackTrace();
-				Log.warning("Output in " + outdir.getPath()+"/coverage.html");
+			if (!GraphicsEnvironment.isHeadless()) {
+				try {
+					Application.openUrl("file://" + outdir.getAbsolutePath() + "/coverage.html");
+				} catch (IOException e) {
+					e.printStackTrace();
+					Log.warning("Output in " + outdir.getPath() + "/coverage.html");
+				}
+			} else {
+				Log.warning("Headless environment detected. Coverage html report available at " + outdir.getPath() + "/coverage.html");
 			}
 		}
 
@@ -391,7 +403,7 @@ public class CoverageCalculator extends Runnable {
 		return map;
 	}
 
-	private int output(int i, int k, String label, LogAnalyser truth, LogAnalyser estimated, File svgdir, PrintStream html,
+	private int output(int i, int k, String label, LogAnalyser truth, LogAnalyser estimated, File outdir, PrintStream html,
 			int [] coverage,
 			int [] meanOver_,
 			double [] meanESS_,
@@ -408,8 +420,8 @@ public class CoverageCalculator extends Runnable {
 
 
 		String cleanLabel = label.replaceAll(":", "");
-		Log.warning("Writing to file " + svgdir.getPath()+"/" + cleanLabel + ".tsv");
-		PrintStream tsv = new PrintStream(svgdir.getPath() +"/" + cleanLabel + ".tsv");
+		Log.warning("Writing to file " + outdir.getPath()+"/data/" + cleanLabel + ".tsv");
+		PrintStream tsv = new PrintStream(outdir.getPath() +"/data/" + cleanLabel + ".tsv");
 		tsv.println("truth\testimates\t95HPDlow\t95HPDup");
 		for (int j = 0; j < estimates.length; j++) {
 			tsv.println(trueValues[map[j]] + "\t" + estimates[j] + "\t" + lows[j] + "\t" + upps[j]);
@@ -417,8 +429,8 @@ public class CoverageCalculator extends Runnable {
 		tsv.close();
 
 
-		Log.warning("Writing to file " + svgdir.getPath()+"/" + cleanLabel + ".svg");
-		PrintStream svg = new PrintStream(svgdir.getPath() +"/" + cleanLabel + ".svg");
+		Log.warning("Writing to file " + outdir.getPath()+"/figs/" + cleanLabel + ".svg");
+		PrintStream svg = new PrintStream(outdir.getPath() +"/figs/" + cleanLabel + ".svg");
 		svg.println("<svg class=\"chart\" width=\"1080\" height=\"760\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">");
 		// define clip path for graph
 		svg.println("<defs>");
@@ -560,7 +572,7 @@ public class CoverageCalculator extends Runnable {
 				+ (showRhoInput.get()?
 				", y = " + corr(trueValues, estimates, map) + ")" : "")
 				+ "</p><p>");
-		html.println("<img width=\"350px\" src=\"" + cleanLabel + ".svg\">");
+		html.println("<img width=\"350px\" src=\"figs/" + cleanLabel + ".svg\">");
 		html.println("</td>");
 		if ((k+1) % columnsInput.get() == 0) {
 			html.println("</tr>");
