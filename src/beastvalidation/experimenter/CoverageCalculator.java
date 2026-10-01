@@ -24,6 +24,7 @@ import beast.base.inference.Runnable;
 import beast.base.core.Log;
 import beast.base.util.Binomial;
 import beastfx.app.tools.LogAnalyser;
+import beastvalidation.util.BoolLogAnalyser;
 
 @Description("Calculate how many times entries in log file are covered in an estimated 95% HPD interval")
 public class CoverageCalculator extends Runnable {
@@ -82,8 +83,8 @@ public class CoverageCalculator extends Runnable {
 
 		typeMap = processTypes();
 
-		LogAnalyser truth = new LogAnalyser(logFileInput.get().getAbsolutePath(), 0, true, false);
-		LogAnalyser estimated = new LogAnalyser(logAnalyserFileInput.get().getAbsolutePath(), 0, true, false);
+		LogAnalyser truth = new BoolLogAnalyser(logFileInput.get().getAbsolutePath(), 0, true, false);
+		LogAnalyser estimated = new BoolLogAnalyser(logAnalyserFileInput.get().getAbsolutePath(), 0, true, false);
 		int skip = skipLogLinesInput.get();
 		int n = estimated.getTrace(0).length;
 		int [] hpd = get95PercentBinomialHPD(n);

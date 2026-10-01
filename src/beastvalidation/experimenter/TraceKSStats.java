@@ -30,6 +30,7 @@ import beast.base.core.Description;
 import beast.base.core.Input;
 import beast.base.core.Input.Validate;
 import beastfx.app.tools.LogAnalyser;
+import beastvalidation.util.BoolLogAnalyser;
 import beastfx.app.util.LogFile;
 import beast.base.inference.Runnable;
 import beast.base.core.Log;
@@ -47,8 +48,8 @@ public class TraceKSStats extends Runnable {
 	@Override
 	public void run() throws Exception {
 		int burnInPercentage = burnInPercentageInput.get();
-		LogAnalyser trace1 = new LogAnalyser(trace1Input.get().getAbsolutePath(), burnInPercentage, true, false);
-		LogAnalyser trace2 = new LogAnalyser(trace2Input.get().getAbsolutePath(), burnInPercentage, true, false);
+		LogAnalyser trace1 = new BoolLogAnalyser(trace1Input.get().getAbsolutePath(), burnInPercentage, true, false);
+		LogAnalyser trace2 = new BoolLogAnalyser(trace2Input.get().getAbsolutePath(), burnInPercentage, true, false);
 		
 		// ensure traces are over the same entries
 		if (trace1.getLabels().size() != trace2.getLabels().size()) {
