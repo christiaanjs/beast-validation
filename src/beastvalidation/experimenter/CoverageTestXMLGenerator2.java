@@ -152,7 +152,7 @@ public class CoverageTestXMLGenerator2 extends beast.base.inference.Runnable {
 		if (!new File(traceFile).exists()) {
 			traceFile = logFileInput.get().getPath();
 		}
-		trace = new LogAnalyser(traceFile, 0, true, false);
+		trace = new BoolLogAnalyser(traceFile, 0, true, false);
 
 		N = trace.getTrace(0).length - skipLogLinesInput.get();
 

@@ -21,6 +21,7 @@ import beast.base.util.Randomizer;
 import beast.base.core.Input.Validate;
 import beast.base.core.Log;
 import beastfx.app.tools.LogAnalyser;
+import beastvalidation.util.BoolLogAnalyser;
 import beastfx.app.util.OutFile;
 
 @Description(value="Validating  Bayesian  Inference Algorithms  with  Simulation-Based Calibration")
@@ -90,8 +91,8 @@ public class SBCAnalyser extends Runnable {
 		}
 		
 
-		LogAnalyser truth = new LogAnalyser(logFileInput.get().getAbsolutePath(), 0, true, false);
-		LogAnalyser estimated = new LogAnalyser(logAnalyserFileInput.get().getAbsolutePath(), 0, true, false);
+		LogAnalyser truth = new BoolLogAnalyser(logFileInput.get().getAbsolutePath(), 0, true, false);
+		LogAnalyser estimated = new BoolLogAnalyser(logAnalyserFileInput.get().getAbsolutePath(), 0, true, false);
 		int skip = skipLogLinesInput.get();
 
 		
